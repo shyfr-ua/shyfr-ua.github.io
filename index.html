@@ -108,22 +108,16 @@
   </section>
 
   <section id="desktop">
-    <h1>📤 Поділитися результатом</h1>
-    <p class="lead">Оберіть соцмережу</p>
+    <h1>📱 Поділіться з телефона</h1>
+    <p class="lead">Поширення результату в соцмережах зараз доступне з мобільного телефону.</p>
 
     <div class="share-list">
-      <a id="threadsDesktop"
-         class="share primary"
-         href="#"
-         target="_blank"
-         rel="noopener noreferrer">Threads</a>
-      <button class="share soon" type="button" disabled>Instagram · скоро</button>
-      <button class="share soon" type="button" disabled>TikTok · скоро</button>
-      <button class="share soon" type="button" disabled>X · скоро</button>
-      <button class="share soon" type="button" disabled>Facebook · скоро</button>
+      <div class="share soon" style="cursor:default;color:#fff">
+        Відкрийте ШИФР у Telegram на телефоні та натисніть «📤 Поділитися результатом у соцмережах».
+      </div>
     </div>
 
-    <p class="note">Threads відкриється одразу з готовою чернеткою поста.</p>
+    <p class="note">На телефоні Threads відкриється з готовою чернеткою поста.</p>
   </section>
 
   <div id="error" class="error"></div>
@@ -160,12 +154,7 @@
     return;
   }
 
-  // Desktop Threads: use the exact percent-encoded text payload in one
-  // parameter. The legacy threads.net intent endpoint still redirects to the
-  // current threads.com composer while preserving the query string.
-  const threadsDesktop = document.getElementById('threadsDesktop');
-  threadsDesktop.href =
-    'https://www.threads.net/intent/post?text=' + encodeURIComponent(text);
+
 
   if (!isMobile) {
     document.getElementById('desktop').style.display = 'block';
