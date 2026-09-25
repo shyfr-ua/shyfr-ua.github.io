@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SHYFR Threads desktop test</title>
+  <style>
+    body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#111;color:#fff;margin:0;padding:32px}
+    main{max-width:720px;margin:0 auto}
+    h1{font-size:28px;margin:0 0 8px}
+    p{line-height:1.5;color:#bbb}
+    .sample{white-space:pre-wrap;background:#1e1e1e;padding:16px;border-radius:14px;margin:20px 0;font-size:18px}
+    .grid{display:grid;gap:12px}
+    button,a{display:flex;align-items:center;justify-content:center;min-height:56px;border:0;border-radius:14px;background:#fff;color:#111;font:inherit;font-weight:700;text-decoration:none;cursor:pointer;padding:0 18px}
+    .secondary{background:#2a2a2a;color:#fff}
+    .note{font-size:14px;color:#888;margin-top:18px}
+    #status{margin-top:16px;color:#ddd}
+  </style>
+</head>
+<body>
+<main>
+  <h1>Threads desktop diagnostic</h1>
+  <p>Нічого не публікуйте. Відкрийте кожен варіант і подивіться, чи емодзі в composer нормальні.</p>
+  <div class="sample" id="sample">ТЕСТ ШИФР 👀
+
+⚫🟡🟢⚫🟢
+🟢⚫🟡🟢⚫
+
+Передбачення 🔮
+Спробуй 👇
+Без спойлерів 😅</div>
+
+  <div class="grid">
+    <a id="a-standard" target="_blank" rel="noopener noreferrer">A. Threads.com, стандартний UTF-8</a>
+    <a id="b-double" target="_blank" rel="noopener noreferrer" class="secondary">B. Подвійне URL-кодування</a>
+    <a id="c-cesu" target="_blank" rel="noopener noreferrer" class="secondary">C. CESU-8 для emoji</a>
+    <a id="d-native" class="secondary">D. Native barcelona://</a>
+    <button id="e-share" class="secondary" type="button">E. Системний Share з Windows</button>
+    <a id="f-addtoany" target="_blank" rel="noopener noreferrer" class="secondary">F. AddToAny Threads</a>
+  </div>
+  <div id="status"></div>
+  <p class="note">A є контрольним варіантом, він має поводитись так само, як поточний desktop share. D спрацює тільки якщо Windows-версія Threads зареєструвала native protocol. E залежить від підтримки Web Share у браузері та встановлених share-target застосунків.</p>
+</main>
+<script>
+(() => {
+  const text = document.getElementById('sample').textContent;
+
+  document.getElementById('a-standard').href =
+    'https://www.threads.com/intent/post?text=' + encodeURIComponent(text);
+
+  document.getElementById('b-double').href =
+    'https://www.threads.com/intent/post?text=' + encodeURIComponent(encodeURIComponent(text));
+
+  function cesu8PercentEncode(str) {
+    let out = '';
+    for (let i = 0; i < str.length; i++) {
+      const c = str.charCodeAt(i);
+      if (
+        (c >= 0x41 && c <= 0x5A) ||
+        (c >= 0x61 && c <= 0x7A) ||
+        (c >= 0x30 && c <= 0x39) ||
+        c === 0x2D || c === 0x2E || c === 0x5F || c === 0x7E
+      ) {
+        out += String.fromCharCode(c);
+      } else if (c < 0x80) {
+        out += '%' + c.toString(16).padStart(2,'0').toUpperCase();
+      } else if (c < 0x800) {
+        out += '%' + (0xC0 | (c >> 6)).toString(16).padStart(2,'0').toUpperCase();
+        out += '%' + (0x80 | (c & 0x3F)).toString(16).padStart(2,'0').toUpperCase();
+      } else {
+        out += '%' + (0xE0 | (c >> 12)).toString(16).padStart(2,'0').toUpperCase();
+        out += '%' + (0x80 | ((c >> 6) & 0x3F)).toString(16).padStart(2,'0').toUpperCase();
+        out += '%' + (0x80 | (c & 0x3F)).toString(16).padStart(2,'0').toUpperCase();
+      }
+    }
+    return out;
+  }
+  document.getElementById('c-cesu').href =
+    'https://www.threads.com/intent/post?text=' + cesu8PercentEncode(text);
+
+  document.getElementById('d-native').href =
+    'barcelona://create?text=' + encodeURIComponent(text);
+
+  document.getElementById('e-share').addEventListener('click', async () => {
+    const s = document.getElementById('status');
+    s.textContent = '';
+    if (typeof navigator.share !== 'function') {
+      s.textContent = 'Цей браузер не підтримує navigator.share().';
+      return;
+    }
+    try {
+      await navigator.share({ text });
+    } catch (e) {
+      if (e && e.name !== 'AbortError') s.textContent = 'Share не відкрився: ' + e;
+    }
+  });
+
+  const addToAny =
+    'https://www.addtoany.com/add_to/threads?linkurl=' +
+    encodeURIComponent('https://shyfr-ua.github.io/') +
+    '&linkname=' + encodeURIComponent(text);
+  document.getElementById('f-addtoany').href = addToAny;
+})();
+</script>
+</body>
+</html>
