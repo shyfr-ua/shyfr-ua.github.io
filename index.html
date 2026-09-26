@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
   <title>Поділитися результатом ШИФР</title>
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-1">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-2">
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
     :root {
@@ -54,6 +54,7 @@
       justify-content: center;
       text-decoration: none;
     }
+    button.share:disabled { opacity: .55; cursor: default; }
     .primary { background: #fff; color: #111; }
     .soon {
       background: #232323;
@@ -77,11 +78,22 @@
       font-size: 14px;
       line-height: 1.4;
     }
-    #mobile, #desktop { display: none; }
+    #challengeShare, #mobile, #desktop { display: none; }
   </style>
 </head>
 <body>
 <main>
+  <section id="challengeShare">
+    <h1>👀 Кинути виклик</h1>
+    <p class="lead">Оберіть людину або чат у Telegram</p>
+
+    <div class="share-list">
+      <button id="challengeShareButton" class="share primary" type="button">👀 Вибрати чат</button>
+    </div>
+
+    <p class="note">Якщо список чатів не відкрився автоматично, натисніть кнопку.</p>
+  </section>
+
   <section id="mobile">
     <div id="mobileTelegram">
       <h1>📤 Поділитися результатом</h1>
@@ -148,13 +160,68 @@
     errorBox.style.display = 'block';
   }
 
+  const preparedId = q.get('pm') || '';
+  const isChallengeShare = q.get('challenge') === '1' && preparedId;
+
+  if (isChallengeShare) {
+    const challengeBlock = document.getElementById('challengeShare');
+    const challengeButton = document.getElementById('challengeShareButton');
+    challengeBlock.style.display = 'block';
+
+    const tg = window.Telegram && window.Telegram.WebApp;
+    try {
+      if (tg && typeof tg.ready === 'function') tg.ready();
+      if (tg && typeof tg.expand === 'function') tg.expand();
+    } catch (_) {}
+
+    let shareInProgress = false;
+
+    function runPreparedShare() {
+      errorBox.style.display = 'none';
+
+      if (!tg || typeof tg.shareMessage !== 'function') {
+        showError('Оновіть Telegram до актуальної версії та спробуйте ще раз.');
+        return;
+      }
+      if (shareInProgress) return;
+
+      shareInProgress = true;
+      challengeButton.disabled = true;
+
+      try {
+        tg.shareMessage(preparedId, (sent) => {
+          shareInProgress = false;
+          challengeButton.disabled = false;
+
+          if (sent) {
+            try {
+              if (typeof tg.close === 'function') {
+                setTimeout(() => tg.close(), 120);
+              }
+            } catch (_) {}
+          }
+        });
+      } catch (_) {
+        shareInProgress = false;
+        challengeButton.disabled = false;
+        showError('Не вдалося відкрити список чатів. Натисніть кнопку ще раз.');
+      }
+    }
+
+    challengeButton.addEventListener('click', runPreparedShare);
+
+    // In current Telegram clients this opens the native destination picker
+    // immediately. The visible button remains as a fallback if the client
+    // requires a user gesture or the automatic attempt is interrupted.
+    setTimeout(runPreparedShare, 120);
+    return;
+  }
+
   if (!text) {
     document.getElementById(isMobile ? 'mobile' : 'desktop').style.display = 'block';
     showError('Не вдалося отримати текст результату. Поверніться в бот і відкрийте поширення ще раз.');
     return;
   }
-
-
 
   if (!isMobile) {
     document.getElementById('desktop').style.display = 'block';
