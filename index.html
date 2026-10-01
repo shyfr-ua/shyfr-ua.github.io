@@ -171,7 +171,7 @@
   const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
   const gameDate = q.get('gd') || '';
   const requestedPlatform = q.get('p') || '';
-  const staleResult = Boolean(gameDate && gameDate !== kyivToday());
+  const staleResult = Boolean(!gameDate || gameDate !== kyivToday());
 
   const errorBox = document.getElementById('error');
   function showError(message) {
