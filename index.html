@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
   <title>Поділитися результатом ШИФР</title>
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-10">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-11">
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
     :root {
@@ -180,84 +180,17 @@
   }
 
   const preparedId = q.get('pm') || '';
-  const creditMode = q.get('credit') || '';
-  const shareTicket = q.get('ticket') || '';
   const isChallengeShare = q.get('challenge') === '1' && preparedId;
-  const isSocialCredit = creditMode === 'social' && Boolean(shareTicket);
 
   if (staleResult) {
     const target = document.getElementById(isChallengeShare ? 'challengeShare' : (isMobile ? 'mobile' : 'desktop'));
     target.style.display = 'block';
-    if (isSocialCredit && q.get('external') !== '1') {
-    if (!isMobile) {
-      document.getElementById('desktop').style.display = 'block';
-      showError('Поширення результату в соцмережах відкрийте з телефона.');
-      return;
-    }
 
-    const socialBlock = document.getElementById('mobileExternal');
-    const telegramBlock = document.getElementById('mobileTelegram');
-    const threadsShare = document.getElementById('threadsShare');
-    const instagramShare = document.getElementById('instagramShare');
-    const otherShare = document.getElementById('otherShare');
-    const externalNote = document.getElementById('externalNote');
-
-    document.getElementById('mobile').style.display = 'block';
-    telegramBlock.style.display = 'none';
-    socialBlock.style.display = 'block';
-    socialBlock.querySelector('h1').textContent = '📱 Опублікувати результат';
-    socialBlock.querySelector('.lead').textContent = 'Оберіть соцмережу';
-    threadsShare.disabled = false;
-    instagramShare.disabled = false;
-    otherShare.style.display = 'none';
-    externalNote.textContent = 'Після публікації поверніться в Telegram і просто надішліть свій нік.';
-
-    const tg = window.Telegram && window.Telegram.WebApp;
-    try {
-      if (tg && typeof tg.ready === 'function') tg.ready();
-      if (tg && typeof tg.expand === 'function') tg.expand();
-    } catch (_) {}
-
-    function openSocialPlatform(platform) {
-      errorBox.style.display = 'none';
-
-      if (!tg || typeof tg.openLink !== 'function' || typeof tg.sendData !== 'function') {
-        showError('Не вдалося відкрити поширення. Поверніться в бот і спробуйте ще раз.');
-        return;
-      }
-
-      const externalUrl = new URL(window.location.href);
-      externalUrl.searchParams.set('external', '1');
-      externalUrl.searchParams.set('p', platform);
-      externalUrl.searchParams.delete('credit');
-      externalUrl.searchParams.delete('ticket');
-
-      try {
-        tg.openLink(externalUrl.toString(), {
-          try_instant_view: false,
-          try_browser: 'chrome'
-        });
-        tg.sendData(JSON.stringify({
-          type: 'social_share_started',
-          ticket: shareTicket,
-          gd: gameDate,
-          platform
-        }));
-      } catch (_) {
-        showError('Не вдалося відкрити сторінку поширення у браузері.');
-      }
-    }
-
-    threadsShare.addEventListener('click', () => openSocialPlatform('threads'));
-    instagramShare.addEventListener('click', () => openSocialPlatform('instagram'));
-    return;
-  }
-
-  if (isChallengeShare) {
+    if (isChallengeShare) {
       target.querySelector('h1').textContent = '⏳ Результат неактуальний';
       target.querySelector('.lead').textContent = 'Поділитися можна лише результатом сьогоднішнього ШИФРУ.';
       document.getElementById('challengeShareButton').style.display = 'none';
-      target.querySelector('.note').textContent = 'Поверніться в бот і завершіть або відкрийте сьогоднішній ШИФР.';
+      target.querySelector('.note').textContent = 'Поверніться в бот і використайте кнопку під сьогоднішнім результатом.';
     } else {
       const mobileTelegram = document.getElementById('mobileTelegram');
       if (mobileTelegram) {
@@ -267,6 +200,7 @@
         mobileTelegram.querySelector('.note').textContent = 'Поверніться в бот і використайте кнопки під сьогоднішнім результатом.';
       }
     }
+
     showError('Це результат попереднього ШИФРУ.');
     return;
   }
@@ -274,6 +208,7 @@
   if (isChallengeShare) {
     const challengeBlock = document.getElementById('challengeShare');
     const challengeButton = document.getElementById('challengeShareButton');
+    const challengeNote = challengeBlock.querySelector('.note');
     challengeBlock.style.display = 'block';
 
     const tg = window.Telegram && window.Telegram.WebApp;
@@ -282,12 +217,18 @@
       if (tg && typeof tg.expand === 'function') tg.expand();
     } catch (_) {}
 
-    const challengeNote = challengeBlock.querySelector('.note');
-    if (creditMode === 'telegram' && shareTicket) {
-      challengeNote.textContent = 'Після успішного надсилання +1 шанс зарахується автоматично.';
-    }
+    challengeNote.textContent = 'Відкриваємо список чатів. Якщо він не з’явився, натисніть кнопку нижче.';
 
     let shareInProgress = false;
+    let fallbackTimer = null;
+
+    function finishAttempt() {
+      shareInProgress = false;
+      if (fallbackTimer) {
+        clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+    }
 
     function runPreparedShare() {
       errorBox.style.display = 'none';
@@ -299,52 +240,38 @@
       if (shareInProgress) return;
 
       shareInProgress = true;
-      challengeButton.disabled = true;
+      fallbackTimer = setTimeout(() => {
+        shareInProgress = false;
+        fallbackTimer = null;
+      }, 1800);
 
       try {
         tg.shareMessage(preparedId, (sent) => {
-          shareInProgress = false;
-          challengeButton.disabled = false;
+          finishAttempt();
 
           if (sent) {
-            if (creditMode === 'telegram' && shareTicket) {
-              try {
-                if (typeof tg.sendData !== 'function') {
-                  showError('Telegram не зміг підтвердити надсилання. Поверніться в бот і спробуйте ще раз.');
-                  return;
-                }
-                tg.sendData(JSON.stringify({
-                  type: 'telegram_result_sent',
-                  ticket: shareTicket,
-                  gd: gameDate
-                }));
-                return;
-              } catch (_) {
-                showError('Не вдалося передати підтвердження в бот. Спробуйте ще раз.');
-                return;
-              }
-            }
-
+            challengeNote.textContent = '✅ Результат надіслано. +1 шанс зарахується в боті.';
             try {
               if (typeof tg.close === 'function') {
-                setTimeout(() => tg.close(), 120);
+                setTimeout(() => tg.close(), 180);
               }
             } catch (_) {}
+          } else {
+            challengeNote.textContent = 'Надсилання скасовано. Можете вибрати чат ще раз.';
           }
         });
       } catch (_) {
-        shareInProgress = false;
-        challengeButton.disabled = false;
+        finishAttempt();
         showError('Не вдалося відкрити список чатів. Натисніть кнопку ще раз.');
       }
     }
 
     challengeButton.addEventListener('click', runPreparedShare);
 
-    // In current Telegram clients this opens the native destination picker
-    // immediately. The visible button remains as a fallback if the client
-    // requires a user gesture or the automatic attempt is interrupted.
-    setTimeout(runPreparedShare, 120);
+    // Try to open Telegram's native destination picker immediately.
+    // The large visible button remains a reliable fallback on clients that
+    // require an explicit user gesture.
+    setTimeout(runPreparedShare, 220);
     return;
   }
 
