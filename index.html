@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
   <title>Поділитися результатом ШИФР</title>
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-9">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-10">
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
     :root {
@@ -183,11 +183,82 @@
   const creditMode = q.get('credit') || '';
   const shareTicket = q.get('ticket') || '';
   const isChallengeShare = q.get('challenge') === '1' && preparedId;
+  const isSocialCredit = creditMode === 'social' && Boolean(shareTicket);
 
   if (staleResult) {
     const target = document.getElementById(isChallengeShare ? 'challengeShare' : (isMobile ? 'mobile' : 'desktop'));
     target.style.display = 'block';
-    if (isChallengeShare) {
+    if (isSocialCredit && q.get('external') !== '1') {
+    if (!isMobile) {
+      document.getElementById('desktop').style.display = 'block';
+      showError('Поширення результату в соцмережах відкрийте з телефона.');
+      return;
+    }
+
+    const socialBlock = document.getElementById('mobileExternal');
+    const telegramBlock = document.getElementById('mobileTelegram');
+    const threadsShare = document.getElementById('threadsShare');
+    const instagramShare = document.getElementById('instagramShare');
+    const otherShare = document.getElementById('otherShare');
+    const externalNote = document.getElementById('externalNote');
+
+    document.getElementById('mobile').style.display = 'block';
+    telegramBlock.style.display = 'none';
+    socialBlock.style.display = 'block';
+    socialBlock.querySelector('h1').textContent = '📱 Опублікувати результат';
+    socialBlock.querySelector('.lead').textContent = 'Оберіть соцмережу';
+    threadsShare.disabled = false;
+    instagramShare.disabled = false;
+    otherShare.style.display = 'none';
+    externalNote.textContent = 'Після публікації поверніться в Telegram і просто надішліть свій нік.';
+
+    const tg = window.Telegram && window.Telegram.WebApp;
+    try {
+      if (tg && typeof tg.ready === 'function') tg.ready();
+      if (tg && typeof tg.expand === 'function') tg.expand();
+    } catch (_) {}
+
+    function openSocialPlatform(platform) {
+      errorBox.style.display = 'none';
+
+      if (!tg || typeof tg.openLink !== 'function' || typeof tg.sendData !== 'function') {
+        showError('Не вдалося відкрити поширення. Поверніться в бот і спробуйте ще раз.');
+        return;
+      }
+
+      const externalUrl = new URL(window.location.href);
+      externalUrl.searchParams.set('external', '1');
+      externalUrl.searchParams.set('p', platform);
+      externalUrl.searchParams.delete('credit');
+      externalUrl.searchParams.delete('ticket');
+
+      try {
+        tg.openLink(externalUrl.toString(), {
+          try_instant_view: false,
+          try_browser: 'chrome'
+        });
+
+        setTimeout(() => {
+          try {
+            tg.sendData(JSON.stringify({
+              type: 'social_share_started',
+              ticket: shareTicket,
+              gd: gameDate,
+              platform
+            }));
+          } catch (_) {}
+        }, 180);
+      } catch (_) {
+        showError('Не вдалося відкрити сторінку поширення у браузері.');
+      }
+    }
+
+    threadsShare.addEventListener('click', () => openSocialPlatform('threads'));
+    instagramShare.addEventListener('click', () => openSocialPlatform('instagram'));
+    return;
+  }
+
+  if (isChallengeShare) {
       target.querySelector('h1').textContent = '⏳ Результат неактуальний';
       target.querySelector('.lead').textContent = 'Поділитися можна лише результатом сьогоднішнього ШИФРУ.';
       document.getElementById('challengeShareButton').style.display = 'none';
@@ -560,7 +631,7 @@
           try {
             await navigator.share(shareData);
             if (requestedPlatform === 'threads') {
-              externalNote.textContent = 'Поверніться в Telegram і підтвердьте публікацію, щоб отримати +5 шансів у розіграші.';
+              externalNote.textContent = 'Поверніться в Telegram і надішліть свій нік у Threads, щоб отримати +5 шансів.';
             }
             return;
           } catch (err) {
@@ -598,7 +669,7 @@
       try {
         await navigator.share(shareData);
         if (requestedPlatform === 'instagram') {
-          externalNote.textContent = 'Поверніться в Telegram і підтвердьте публікацію, щоб отримати +5 шансів у розіграші.';
+          externalNote.textContent = 'Поверніться в Telegram і надішліть свій нік в Instagram, щоб отримати +5 шансів.';
         }
       } catch (err) {
         if (err && err.name === 'AbortError') return;
