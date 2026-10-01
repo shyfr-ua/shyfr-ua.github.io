@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
   <title>Поділитися результатом ШИФР</title>
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-4">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-5">
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
     :root {
@@ -112,12 +112,12 @@
       <p class="lead">Оберіть, куди поділитися</p>
 
       <div class="share-list">
-        <a id="threadsNative" class="share primary" href="#">Threads</a>
-        <button id="instagramStories" class="share primary" type="button" disabled>📸 Instagram Stories</button>
+        <button id="threadsShare" class="share primary" type="button" disabled>Threads</button>
+        <button id="instagramShare" class="share primary" type="button" disabled>Instagram</button>
         <button id="otherShare" class="share secondary" type="button">Інші соцмережі</button>
       </div>
 
-      <p class="note">Для Threads відкриється готова чернетка поста. Для Instagram Stories створимо вертикальну PNG-картинку результату та відкриємо системне меню, де потрібно вибрати Instagram → Stories.</p>
+      <p class="note">Для Threads підготуємо текст результату та окрему горизонтальну картинку. Для Instagram створимо вертикальну PNG-картинку. Після натискання виберіть потрібний застосунок у системному меню.</p>
     </div>
   </section>
 
@@ -131,7 +131,7 @@
       </div>
     </div>
 
-    <p class="note">На телефоні можна поділитися в Threads або створити картинку для Instagram Stories.</p>
+    <p class="note">На телефоні можна опублікувати результат у Threads або Instagram.</p>
   </section>
 
   <div id="error" class="error"></div>
@@ -248,7 +248,7 @@
       const cells = Array.from(line).filter(ch => colorChars.has(ch));
       if (cells.length === 5) grid.push(cells);
     }
-    return { day, result, grid };
+    return { header, day, result, grid };
   }
 
   function canvasToBlob(canvas) {
@@ -319,7 +319,64 @@
     ctx.fillText('5 літер · 6 спроб', centerX, 1650);
 
     const blob = await canvasToBlob(canvas);
-    const filename = parsed.day ? `shyfr-${parsed.day}-story.png` : 'shyfr-story.png';
+    const filename = parsed.day ? `shyfr-${parsed.day}-instagram.png` : 'shyfr-instagram.png';
+    return new File([blob], filename, { type: 'image/png' });
+  }
+
+  async function buildThreadsFile(value) {
+    const parsed = parseResult(value);
+    if (!parsed.grid.length) throw new Error('No result grid');
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 800;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas unavailable');
+
+    ctx.fillStyle = '#101214';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const centerX = canvas.width / 2;
+    const gridTop = 38;
+    const gridAreaHeight = 610;
+    const maxGridWidth = 720;
+    const gapX = 24;
+    const gapY = 18;
+    const rows = parsed.grid.length;
+    const cols = 5;
+    const diameterByWidth = (maxGridWidth - gapX * (cols - 1)) / cols;
+    const diameterByHeight = (gridAreaHeight - gapY * (rows - 1)) / rows;
+    const diameter = Math.max(54, Math.min(100, diameterByWidth, diameterByHeight));
+    const radius = diameter / 2;
+    const gridWidth = cols * diameter + (cols - 1) * gapX;
+    const gridHeight = rows * diameter + (rows - 1) * gapY;
+    const startX = centerX - gridWidth / 2 + radius;
+    const startY = gridTop + (gridAreaHeight - gridHeight) / 2 + radius;
+    const colors = {
+      '⚫': '#4a4d51',
+      '🟡': '#ffd326',
+      '🟢': '#30c96b'
+    };
+
+    parsed.grid.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        const x = startX + colIndex * (diameter + gapX);
+        const y = startY + rowIndex * (diameter + gapY);
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = colors[cell] || '#4a4d51';
+        ctx.fill();
+      });
+    });
+
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '700 48px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillText('Telegram: @shyfr_ua', centerX, 730);
+
+    const blob = await canvasToBlob(canvas);
+    const filename = parsed.day ? `shyfr-${parsed.day}-threads.png` : 'shyfr-threads.png';
     return new File([blob], filename, { type: 'image/png' });
   }
 
@@ -327,36 +384,72 @@
     telegramBlock.style.display = 'none';
     externalBlock.style.display = 'block';
 
-    const threadsNativeUrl =
-      'barcelona://create?text=' + encodeURIComponent(text);
+    const parsed = parseResult(text);
+    const threadsCaption = parsed.header || text.split(/\r?\n/)[0] || 'ШИФР';
 
     const threadsWebFallback =
-      'https://www.threads.com/intent/post?text=' + encodeURIComponent(text);
+      'https://www.threads.com/intent/post?text=' + encodeURIComponent(threadsCaption);
+
+    const threadsNativeUrl =
+      'barcelona://create?text=' + encodeURIComponent(threadsCaption);
 
     const threadsIntent =
-      'intent://create?text=' + encodeURIComponent(text) +
+      'intent://create?text=' + encodeURIComponent(threadsCaption) +
       '#Intent;scheme=barcelona;package=com.instagram.barcelona;' +
       'S.browser_fallback_url=' + encodeURIComponent(threadsWebFallback) + ';end';
 
-    const threadsNative = document.getElementById('threadsNative');
-    threadsNative.href = /Android/i.test(ua) ? threadsIntent : threadsNativeUrl;
+    const threadsShare = document.getElementById('threadsShare');
+    const instagramShare = document.getElementById('instagramShare');
+    let threadsFile = null;
+    let instagramFile = null;
+    let threadsBuildError = false;
+    let instagramBuildError = false;
 
-    const instagramStories = document.getElementById('instagramStories');
-    let storyFile = null;
-    let storyBuildError = false;
-
-    buildStoryFile(text).then((file) => {
-      storyFile = file;
-      instagramStories.disabled = false;
+    buildThreadsFile(text).then((file) => {
+      threadsFile = file;
+      threadsShare.disabled = false;
     }).catch(() => {
-      storyBuildError = true;
-      instagramStories.disabled = false;
+      threadsBuildError = true;
+      threadsShare.disabled = false;
     });
 
-    instagramStories.addEventListener('click', async () => {
+    buildStoryFile(text).then((file) => {
+      instagramFile = file;
+      instagramShare.disabled = false;
+    }).catch(() => {
+      instagramBuildError = true;
+      instagramShare.disabled = false;
+    });
+
+    threadsShare.addEventListener('click', async () => {
       errorBox.style.display = 'none';
 
-      if (storyBuildError || !storyFile) {
+      if (!threadsBuildError && threadsFile && typeof navigator.share === 'function') {
+        const shareData = { text: threadsCaption, files: [threadsFile] };
+        const canShareFiles =
+          typeof navigator.canShare !== 'function' || navigator.canShare({ files: [threadsFile] });
+
+        if (canShareFiles) {
+          try {
+            await navigator.share(shareData);
+            return;
+          } catch (err) {
+            if (err && err.name === 'AbortError') return;
+          }
+        }
+      }
+
+      try {
+        window.location.href = /Android/i.test(ua) ? threadsIntent : threadsNativeUrl;
+      } catch (_) {
+        window.location.href = threadsWebFallback;
+      }
+    });
+
+    instagramShare.addEventListener('click', async () => {
+      errorBox.style.display = 'none';
+
+      if (instagramBuildError || !instagramFile) {
         showError('Не вдалося створити картинку результату. Спробуйте відкрити поширення ще раз.');
         return;
       }
@@ -366,7 +459,7 @@
         return;
       }
 
-      const shareData = { files: [storyFile] };
+      const shareData = { files: [instagramFile] };
       if (typeof navigator.canShare === 'function' && !navigator.canShare(shareData)) {
         showError('Цей браузер не підтримує поширення PNG-файлів.');
         return;
@@ -376,7 +469,7 @@
         await navigator.share(shareData);
       } catch (err) {
         if (err && err.name === 'AbortError') return;
-        showError('Не вдалося відкрити Instagram Stories. У системному меню виберіть Instagram.');
+        showError('Не вдалося відкрити системне меню. Виберіть Instagram і потрібний формат публікації.');
       }
     });
 
