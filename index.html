@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
   <title>Поділитися результатом ШИФР</title>
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-5">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-6">
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
     :root {
@@ -117,7 +117,7 @@
         <button id="otherShare" class="share secondary" type="button">Інші соцмережі</button>
       </div>
 
-      <p class="note">Для Threads підготуємо текст результату та окрему горизонтальну картинку. Для Instagram створимо вертикальну PNG-картинку. Після натискання виберіть потрібний застосунок у системному меню.</p>
+      <p class="note">Для Threads створимо квадратну PNG-картинку з результатом. Для Instagram створимо вертикальну PNG-картинку. Після натискання виберіть потрібний застосунок у системному меню.</p>
     </div>
   </section>
 
@@ -329,29 +329,70 @@
 
     const canvas = document.createElement('canvas');
     canvas.width = 1080;
-    canvas.height = 800;
+    canvas.height = 1080;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas unavailable');
 
     ctx.fillStyle = '#101214';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Subtle brand accents, intentionally very low contrast.
+    ctx.save();
+    ctx.strokeStyle = 'rgba(48,201,107,.08)';
+    ctx.lineWidth = 36;
+    ctx.beginPath();
+    ctx.arc(-26, -24, 190, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(1100, 1090, 190, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
     const centerX = canvas.width / 2;
-    const gridTop = 38;
-    const gridAreaHeight = 610;
-    const maxGridWidth = 720;
-    const gapX = 24;
-    const gapY = 18;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    const titleY = 125;
+    const titleFont = '700 72px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.font = titleFont;
+
+    const titleLeft = 'ШИФР ';
+    const titleMid = parsed.day ? `#${parsed.day}` : '';
+    const titleRight = parsed.result ? ` ${parsed.result}` : '';
+    const fullTitleWidth =
+      ctx.measureText(titleLeft).width +
+      ctx.measureText(titleMid).width +
+      ctx.measureText(titleRight).width;
+    let titleX = centerX - fullTitleWidth / 2;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(titleLeft, titleX, titleY);
+    titleX += ctx.measureText(titleLeft).width;
+
+    ctx.fillStyle = '#30c96b';
+    ctx.fillText(titleMid, titleX, titleY);
+    titleX += ctx.measureText(titleMid).width;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(titleRight, titleX, titleY);
+
     const rows = parsed.grid.length;
     const cols = 5;
+    const gridAreaTop = 235;
+    const gridAreaBottom = 860;
+    const gridAreaHeight = gridAreaBottom - gridAreaTop;
+    const maxGridWidth = 720;
+    const gapX = 24;
+    const gapY = rows >= 6 ? 14 : 20;
     const diameterByWidth = (maxGridWidth - gapX * (cols - 1)) / cols;
     const diameterByHeight = (gridAreaHeight - gapY * (rows - 1)) / rows;
-    const diameter = Math.max(54, Math.min(100, diameterByWidth, diameterByHeight));
+    const diameter = Math.max(58, Math.min(108, diameterByWidth, diameterByHeight));
     const radius = diameter / 2;
     const gridWidth = cols * diameter + (cols - 1) * gapX;
     const gridHeight = rows * diameter + (rows - 1) * gapY;
     const startX = centerX - gridWidth / 2 + radius;
-    const startY = gridTop + (gridAreaHeight - gridHeight) / 2 + radius;
+    const startY = gridAreaTop + (gridAreaHeight - gridHeight) / 2 + radius;
+
     const colors = {
       '⚫': '#4a4d51',
       '🟡': '#ffd326',
@@ -369,11 +410,21 @@
       });
     });
 
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = '700 48px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText('Telegram: @shyfr_ua', centerX, 730);
+    ctx.font = '700 46px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+    const footerLeft = 'Telegram: ';
+    const footerRight = '@shyfr_ua';
+    const footerWidth = ctx.measureText(footerLeft).width + ctx.measureText(footerRight).width;
+    let footerX = centerX - footerWidth / 2;
+    const footerY = 960;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(footerLeft, footerX, footerY);
+    footerX += ctx.measureText(footerLeft).width;
+
+    ctx.fillStyle = '#30c96b';
+    ctx.fillText(footerRight, footerX, footerY);
 
     const blob = await canvasToBlob(canvas);
     const filename = parsed.day ? `shyfr-${parsed.day}-threads.png` : 'shyfr-threads.png';
@@ -425,9 +476,9 @@
       errorBox.style.display = 'none';
 
       if (!threadsBuildError && threadsFile && typeof navigator.share === 'function') {
-        const shareData = { text: threadsCaption, files: [threadsFile] };
+        const shareData = { files: [threadsFile] };
         const canShareFiles =
-          typeof navigator.canShare !== 'function' || navigator.canShare({ files: [threadsFile] });
+          typeof navigator.canShare !== 'function' || navigator.canShare(shareData);
 
         if (canShareFiles) {
           try {
