@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
   <title>Поділитися результатом ШИФР</title>
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-6">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-7">
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
     :root {
@@ -117,7 +117,7 @@
         <button id="otherShare" class="share secondary" type="button">Інші соцмережі</button>
       </div>
 
-      <p class="note">Для Threads створимо квадратну PNG-картинку з результатом. Для Instagram створимо вертикальну PNG-картинку. Після натискання виберіть потрібний застосунок у системному меню.</p>
+      <p id="externalNote" class="note">Для Threads створимо квадратну PNG-картинку з результатом. Для Instagram створимо вертикальну PNG-картинку. Після натискання виберіть потрібний застосунок у системному меню.</p>
     </div>
   </section>
 
@@ -141,6 +141,20 @@
 (() => {
   const q = new URLSearchParams(location.search);
 
+  function kyivToday() {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Kyiv',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(new Date());
+    const values = {};
+    parts.forEach(part => {
+      if (part.type !== 'literal') values[part.type] = part.value;
+    });
+    return `${values.year}-${values.month}-${values.day}`;
+  }
+
   function decodeBase64Url(value) {
     if (!value) return '';
     try {
@@ -155,6 +169,9 @@
   const text = decodeBase64Url(q.get('t')) || q.get('text') || '';
   const ua = navigator.userAgent || '';
   const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+  const gameDate = q.get('gd') || '';
+  const requestedPlatform = q.get('p') || '';
+  const staleResult = Boolean(gameDate && gameDate !== kyivToday());
 
   const errorBox = document.getElementById('error');
   function showError(message) {
@@ -164,6 +181,27 @@
 
   const preparedId = q.get('pm') || '';
   const isChallengeShare = q.get('challenge') === '1' && preparedId;
+
+  if (staleResult) {
+    const target = document.getElementById(isChallengeShare ? 'challengeShare' : (isMobile ? 'mobile' : 'desktop'));
+    target.style.display = 'block';
+    if (isChallengeShare) {
+      target.querySelector('h1').textContent = '⏳ Результат неактуальний';
+      target.querySelector('.lead').textContent = 'Поділитися можна лише результатом сьогоднішнього ШИФРУ.';
+      document.getElementById('challengeShareButton').style.display = 'none';
+      target.querySelector('.note').textContent = 'Поверніться в бот і завершіть або відкрийте сьогоднішній ШИФР.';
+    } else {
+      const mobileTelegram = document.getElementById('mobileTelegram');
+      if (mobileTelegram) {
+        mobileTelegram.querySelector('h1').textContent = '⏳ Результат неактуальний';
+        mobileTelegram.querySelector('.lead').textContent = 'Поділитися можна лише результатом сьогоднішнього ШИФРУ.';
+        document.getElementById('systemShare').style.display = 'none';
+        mobileTelegram.querySelector('.note').textContent = 'Поверніться в бот і використайте кнопки під сьогоднішнім результатом.';
+      }
+    }
+    showError('Це результат попереднього ШИФРУ.');
+    return;
+  }
 
   if (isChallengeShare) {
     const challengeBlock = document.getElementById('challengeShare');
@@ -435,6 +473,21 @@
     telegramBlock.style.display = 'none';
     externalBlock.style.display = 'block';
 
+    const threadsShare = document.getElementById('threadsShare');
+    const instagramShare = document.getElementById('instagramShare');
+    const otherShare = document.getElementById('otherShare');
+    const externalNote = document.getElementById('externalNote');
+
+    if (requestedPlatform === 'threads') {
+      instagramShare.style.display = 'none';
+      otherShare.style.display = 'none';
+      externalBlock.querySelector('.lead').textContent = 'Опублікуйте квадратну картинку в Threads';
+    } else if (requestedPlatform === 'instagram') {
+      threadsShare.style.display = 'none';
+      otherShare.style.display = 'none';
+      externalBlock.querySelector('.lead').textContent = 'Опублікуйте картинку в Instagram';
+    }
+
     const parsed = parseResult(text);
     const threadsCaption = parsed.header || text.split(/\r?\n/)[0] || 'ШИФР';
 
@@ -449,8 +502,6 @@
       '#Intent;scheme=barcelona;package=com.instagram.barcelona;' +
       'S.browser_fallback_url=' + encodeURIComponent(threadsWebFallback) + ';end';
 
-    const threadsShare = document.getElementById('threadsShare');
-    const instagramShare = document.getElementById('instagramShare');
     let threadsFile = null;
     let instagramFile = null;
     let threadsBuildError = false;
@@ -483,6 +534,9 @@
         if (canShareFiles) {
           try {
             await navigator.share(shareData);
+            if (requestedPlatform === 'threads') {
+              externalNote.textContent = 'Поверніться в Telegram і підтвердьте публікацію, щоб отримати +5 шансів у розіграші.';
+            }
             return;
           } catch (err) {
             if (err && err.name === 'AbortError') return;
@@ -518,13 +572,15 @@
 
       try {
         await navigator.share(shareData);
+        if (requestedPlatform === 'instagram') {
+          externalNote.textContent = 'Поверніться в Telegram і підтвердьте публікацію, щоб отримати +5 шансів у розіграші.';
+        }
       } catch (err) {
         if (err && err.name === 'AbortError') return;
         showError('Не вдалося відкрити системне меню. Виберіть Instagram і потрібний формат публікації.');
       }
     });
 
-    const otherShare = document.getElementById('otherShare');
     otherShare.addEventListener('click', async () => {
       errorBox.style.display = 'none';
 
