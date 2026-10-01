@@ -237,17 +237,12 @@
           try_instant_view: false,
           try_browser: 'chrome'
         });
-
-        setTimeout(() => {
-          try {
-            tg.sendData(JSON.stringify({
-              type: 'social_share_started',
-              ticket: shareTicket,
-              gd: gameDate,
-              platform
-            }));
-          } catch (_) {}
-        }, 180);
+        tg.sendData(JSON.stringify({
+          type: 'social_share_started',
+          ticket: shareTicket,
+          gd: gameDate,
+          platform
+        }));
       } catch (_) {
         showError('Не вдалося відкрити сторінку поширення у браузері.');
       }
