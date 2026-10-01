@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
   <title>Поділитися результатом ШИФР</title>
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-8">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-9">
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
     :root {
@@ -180,6 +180,8 @@
   }
 
   const preparedId = q.get('pm') || '';
+  const creditMode = q.get('credit') || '';
+  const shareTicket = q.get('ticket') || '';
   const isChallengeShare = q.get('challenge') === '1' && preparedId;
 
   if (staleResult) {
@@ -214,6 +216,11 @@
       if (tg && typeof tg.expand === 'function') tg.expand();
     } catch (_) {}
 
+    const challengeNote = challengeBlock.querySelector('.note');
+    if (creditMode === 'telegram' && shareTicket) {
+      challengeNote.textContent = 'Після успішного надсилання +1 шанс зарахується автоматично.';
+    }
+
     let shareInProgress = false;
 
     function runPreparedShare() {
@@ -234,6 +241,24 @@
           challengeButton.disabled = false;
 
           if (sent) {
+            if (creditMode === 'telegram' && shareTicket) {
+              try {
+                if (typeof tg.sendData !== 'function') {
+                  showError('Telegram не зміг підтвердити надсилання. Поверніться в бот і спробуйте ще раз.');
+                  return;
+                }
+                tg.sendData(JSON.stringify({
+                  type: 'telegram_result_sent',
+                  ticket: shareTicket,
+                  gd: gameDate
+                }));
+                return;
+              } catch (_) {
+                showError('Не вдалося передати підтвердження в бот. Спробуйте ще раз.');
+                return;
+              }
+            }
+
             try {
               if (typeof tg.close === 'function') {
                 setTimeout(() => tg.close(), 120);
