@@ -5,32 +5,155 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-12">
   <title>Поділитися результатом ШИФР</title>
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-13">
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
-    :root { color-scheme: dark; font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
+    :root {
+      color-scheme: dark;
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    }
     * { box-sizing: border-box; }
-    body { margin:0; min-height:100vh; background:#111; color:#fff; display:grid; place-items:center; padding:24px 16px; }
-    main { width:min(100%,520px); text-align:center; }
-    h1 { margin:0 0 10px; font-size:28px; line-height:1.15; }
-    p { margin:0 0 24px; opacity:.72; font-size:16px; line-height:1.45; }
-    button { width:100%; min-height:60px; border:0; border-radius:16px; padding:0 18px; background:#fff; color:#111; font:inherit; font-size:18px; font-weight:700; cursor:pointer; }
-    .note { margin-top:18px; font-size:13px; opacity:.5; }
-    .error { display:none; margin-top:16px; padding:12px 14px; border-radius:12px; background:#2b1c1c; color:#ffd7d7; font-size:14px; line-height:1.4; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #111;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    main { width: min(100%, 520px); }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      line-height: 1.15;
+      text-align: center;
+    }
+    .lead {
+      margin: 0 0 26px;
+      text-align: center;
+      opacity: .72;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+    .share-list { display: grid; gap: 12px; }
+    button.share, a.share {
+      width: 100%;
+      min-height: 60px;
+      border: 0;
+      border-radius: 16px;
+      padding: 0 18px;
+      font: inherit;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+    button.share:disabled { opacity: .55; cursor: default; }
+    .primary { background: #fff; color: #111; }
+    .secondary { background: #232323; color: #fff; }
+    .soon {
+      background: #232323;
+      color: #777;
+      cursor: default;
+    }
+    .note {
+      margin-top: 20px;
+      font-size: 13px;
+      line-height: 1.45;
+      text-align: center;
+      opacity: .56;
+    }
+    .error {
+      display: none;
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #2b1c1c;
+      color: #ffd7d7;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    #challengeShare, #mobile, #desktop { display: none; }
   </style>
 </head>
 <body>
 <main>
-  <h1>📱 Опублікувати результат</h1>
-  <p>Натисніть кнопку нижче та оберіть потрібну соцмережу.</p>
-  <button id="share" type="button">📱 Опублікувати результат</button>
-  <div id="note" class="note">Threads, Instagram та інші застосунки з'являться у системному меню поширення.</div>
+  <section id="challengeShare">
+    <h1>📤 Надіслати результат</h1>
+    <p class="lead">Оберіть, кому надіслати результат у Telegram</p>
+
+    <div class="share-list">
+      <button id="challengeShareButton" class="share primary" type="button">📤 Вибрати чат</button>
+    </div>
+
+    <p class="note">Якщо список чатів не відкрився автоматично, натисніть кнопку.</p>
+  </section>
+
+  <section id="mobile">
+    <div id="mobileTelegram">
+      <h1>📱 Опублікувати результат</h1>
+      <p class="lead">Натисніть кнопку нижче</p>
+
+      <div class="share-list">
+        <button id="systemShare" class="share primary" type="button">📱 Опублікувати результат</button>
+      </div>
+
+      <p class="note">Відкриємо сторінку поширення у браузері.</p>
+    </div>
+
+    <div id="mobileExternal" style="display:none">
+      <h1>📱 Опублікувати результат</h1>
+      <p class="lead">Оберіть, куди поділитися</p>
+
+      <div class="share-list">
+        <button id="threadsShare" class="share primary" type="button" disabled>Threads</button>
+        <button id="instagramShare" class="share primary" type="button" disabled>Instagram</button>
+        <button id="otherShare" class="share secondary" type="button">Інші соцмережі</button>
+      </div>
+
+      <p id="externalNote" class="note">Для Threads створимо квадратну PNG-картинку з результатом. Для Instagram створимо вертикальну PNG-картинку. Після натискання виберіть потрібний застосунок у системному меню.</p>
+    </div>
+  </section>
+
+  <section id="desktop">
+    <h1>📱 Поділіться з телефона</h1>
+    <p class="lead">Поширення результату в соцмережах зараз доступне з мобільного телефону.</p>
+
+    <div class="share-list">
+      <div class="share soon" style="cursor:default;color:#fff">
+        Відкрийте ШИФР у Telegram на телефоні та натисніть «📱 Поділитися в соцмережах».
+      </div>
+    </div>
+
+    <p class="note">На телефоні можна опублікувати результат у Threads або Instagram.</p>
+  </section>
+
   <div id="error" class="error"></div>
 </main>
+
 <script>
 (() => {
   const q = new URLSearchParams(location.search);
+
+  function kyivToday() {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Kyiv',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(new Date());
+    const values = {};
+    parts.forEach(part => {
+      if (part.type !== 'literal') values[part.type] = part.value;
+    });
+    return `${values.year}-${values.month}-${values.day}`;
+  }
 
   function decodeBase64Url(value) {
     if (!value) return '';
@@ -38,92 +161,476 @@
       const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4);
       const bytes = Uint8Array.from(atob(padded), c => c.charCodeAt(0));
       return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
-    } catch (_) { return ''; }
-  }
-
-  function kyivToday() {
-    const parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Europe/Kyiv', year: 'numeric', month: '2-digit', day: '2-digit'
-    }).formatToParts(new Date());
-    const values = {};
-    for (const part of parts) if (part.type !== 'literal') values[part.type] = part.value;
-    return `${values.year}-${values.month}-${values.day}`;
+    } catch (_) {
+      return '';
+    }
   }
 
   const text = decodeBase64Url(q.get('t')) || q.get('text') || '';
-  const ticket = q.get('ticket') || '';
+  const ua = navigator.userAgent || '';
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
   const gameDate = q.get('gd') || '';
-  const external = q.get('external') === '1';
-  const button = document.getElementById('share');
-  const errorBox = document.getElementById('error');
-  const note = document.getElementById('note');
-  const tg = window.Telegram && window.Telegram.WebApp;
+  const requestedPlatform = q.get('p') || '';
+  const staleResult = Boolean(!gameDate || gameDate !== kyivToday());
 
+  const errorBox = document.getElementById('error');
   function showError(message) {
     errorBox.textContent = message;
     errorBox.style.display = 'block';
   }
 
-  if (!text) {
-    button.disabled = true;
-    showError('Не вдалося отримати результат. Поверніться в ШИФР і відкрийте поширення ще раз.');
-    return;
-  }
+  const preparedId = q.get('pm') || '';
+  const isChallengeShare = q.get('challenge') === '1' && preparedId;
 
-  if (gameDate && gameDate !== kyivToday()) {
-    button.disabled = true;
-    showError('Поділитися можна лише результатом сьогоднішнього ШИФРУ.');
-    return;
-  }
+  if (staleResult) {
+    const target = document.getElementById(isChallengeShare ? 'challengeShare' : (isMobile ? 'mobile' : 'desktop'));
+    target.style.display = 'block';
 
-  try {
-    if (tg && typeof tg.ready === 'function') tg.ready();
-    if (tg && typeof tg.expand === 'function') tg.expand();
-  } catch (_) {}
-
-  function silentlyCredit() {
-    if (!ticket || !tg || typeof tg.sendData !== 'function') return;
-    try {
-      tg.sendData(JSON.stringify({ type: 'social_share_started', ticket }));
-    } catch (_) {}
-  }
-
-  async function systemShare() {
-    errorBox.style.display = 'none';
-    if (typeof navigator.share !== 'function') {
-      try {
-        await navigator.clipboard.writeText(text);
-        note.textContent = 'Текст результату скопійовано. Вставте його у потрібну соцмережу.';
-      } catch (_) {
-        showError('Системне меню поширення недоступне в цьому браузері.');
+    if (isChallengeShare) {
+      target.querySelector('h1').textContent = '⏳ Результат неактуальний';
+      target.querySelector('.lead').textContent = 'Поділитися можна лише результатом сьогоднішнього ШИФРУ.';
+      document.getElementById('challengeShareButton').style.display = 'none';
+      target.querySelector('.note').textContent = 'Поверніться в бот і використайте кнопку під сьогоднішнім результатом.';
+    } else {
+      const mobileTelegram = document.getElementById('mobileTelegram');
+      if (mobileTelegram) {
+        mobileTelegram.querySelector('h1').textContent = '⏳ Результат неактуальний';
+        mobileTelegram.querySelector('.lead').textContent = 'Поділитися можна лише результатом сьогоднішнього ШИФРУ.';
+        document.getElementById('systemShare').style.display = 'none';
+        mobileTelegram.querySelector('.note').textContent = 'Поверніться в бот і використайте кнопки під сьогоднішнім результатом.';
       }
-      return;
     }
-    try {
-      await navigator.share({ text });
-    } catch (err) {
-      if (err && err.name === 'AbortError') return;
-      showError('Не вдалося відкрити системне меню поширення.');
-    }
+
+    showError('Це результат попереднього ШИФРУ.');
+    return;
   }
 
-  button.addEventListener('click', async () => {
-    errorBox.style.display = 'none';
+  if (isChallengeShare) {
+    const challengeBlock = document.getElementById('challengeShare');
+    const challengeButton = document.getElementById('challengeShareButton');
+    const challengeNote = challengeBlock.querySelector('.note');
+    challengeBlock.style.display = 'block';
 
-    if (!external && tg && typeof tg.openLink === 'function') {
-      const target = new URL(window.location.href);
-      target.searchParams.set('external', '1');
-      try {
-        tg.openLink(target.toString(), { try_instant_view: false });
-        silentlyCredit();
-        return;
-      } catch (_) {}
+    const tg = window.Telegram && window.Telegram.WebApp;
+    try {
+      if (tg && typeof tg.ready === 'function') tg.ready();
+      if (tg && typeof tg.expand === 'function') tg.expand();
+    } catch (_) {}
+
+    challengeNote.textContent = 'Відкриваємо список чатів. Якщо він не з’явився, натисніть кнопку нижче.';
+
+    let shareInProgress = false;
+    let fallbackTimer = null;
+
+    function finishAttempt() {
+      shareInProgress = false;
+      if (fallbackTimer) {
+        clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
     }
 
+    function runPreparedShare() {
+      errorBox.style.display = 'none';
+
+      if (!tg || typeof tg.shareMessage !== 'function') {
+        showError('Оновіть Telegram до актуальної версії та спробуйте ще раз.');
+        return;
+      }
+      if (shareInProgress) return;
+
+      shareInProgress = true;
+      fallbackTimer = setTimeout(() => {
+        shareInProgress = false;
+        fallbackTimer = null;
+      }, 1800);
+
+      try {
+        tg.shareMessage(preparedId, (sent) => {
+          finishAttempt();
+
+          if (sent) {
+            try {
+              if (typeof tg.close === 'function') {
+                setTimeout(() => tg.close(), 180);
+              }
+            } catch (_) {}
+          } else {
+            challengeNote.textContent = 'Надсилання скасовано. Можете вибрати чат ще раз.';
+          }
+        });
+      } catch (_) {
+        finishAttempt();
+        showError('Не вдалося відкрити список чатів. Натисніть кнопку ще раз.');
+      }
+    }
+
+    challengeButton.addEventListener('click', runPreparedShare);
+
+    // Try to open Telegram's native destination picker immediately.
+    // The large visible button remains a reliable fallback on clients that
+    // require an explicit user gesture.
+    setTimeout(runPreparedShare, 220);
+    return;
+  }
+
+  if (!text) {
+    document.getElementById(isMobile ? 'mobile' : 'desktop').style.display = 'block';
+    showError('Не вдалося отримати текст результату. Поверніться в бот і відкрийте поширення ще раз.');
+    return;
+  }
+
+  if (!isMobile) {
+    document.getElementById('desktop').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('mobile').style.display = 'block';
+
+  const isExternalMobile = q.get('external') === '1';
+  const telegramBlock = document.getElementById('mobileTelegram');
+  const externalBlock = document.getElementById('mobileExternal');
+
+  function parseResult(value) {
+    const lines = value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const header = lines[0] || 'ШИФР';
+    const match = header.match(/^ШИФР\s+#?(\d+)\s+(.+)$/i);
+    const day = match ? match[1] : '';
+    const result = match ? match[2] : header.replace(/^ШИФР\s*/i, '');
+    const colorChars = new Set(['⚫', '🟡', '🟢']);
+    const grid = [];
+    for (const line of lines.slice(1)) {
+      const cells = Array.from(line).filter(ch => colorChars.has(ch));
+      if (cells.length === 5) grid.push(cells);
+    }
+    return { header, day, result, grid };
+  }
+
+  function canvasToBlob(canvas) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('PNG generation failed'));
+      }, 'image/png', 1);
+    });
+  }
+
+  async function buildStoryFile(value) {
+    const parsed = parseResult(value);
+    if (!parsed.grid.length) throw new Error('No result grid');
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas unavailable');
+
+    ctx.fillStyle = '#101113';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const centerX = canvas.width / 2;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '800 86px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillText(parsed.day ? `ШИФР #${parsed.day}` : 'ШИФР', centerX, 350);
+
+    ctx.font = '800 72px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillText(parsed.result || '', centerX, 470);
+
+    const radius = 54;
+    const gapX = 34;
+    const gapY = 34;
+    const cellStepX = radius * 2 + gapX;
+    const cellStepY = radius * 2 + gapY;
+    const gridWidth = cellStepX * 4;
+    const gridHeight = cellStepY * (parsed.grid.length - 1);
+    const startX = centerX - gridWidth / 2;
+    const startY = 890 - gridHeight / 2;
+    const colors = {
+      '⚫': '#2b2d31',
+      '🟡': '#d6ae24',
+      '🟢': '#46a758'
+    };
+
+    parsed.grid.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        const x = startX + colIndex * cellStepX;
+        const y = startY + rowIndex * cellStepY;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = colors[cell] || '#2b2d31';
+        ctx.fill();
+      });
+    });
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 52px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillText('Telegram: shyfr_ua', centerX, 1575);
+
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.font = '500 34px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillText('5 літер · 6 спроб', centerX, 1650);
+
+    const blob = await canvasToBlob(canvas);
+    const filename = parsed.day ? `shyfr-${parsed.day}-instagram.png` : 'shyfr-instagram.png';
+    return new File([blob], filename, { type: 'image/png' });
+  }
+
+  async function buildThreadsFile(value) {
+    const parsed = parseResult(value);
+    if (!parsed.grid.length) throw new Error('No result grid');
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1080;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas unavailable');
+
+    ctx.fillStyle = '#101214';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Subtle brand accents, intentionally very low contrast.
+    ctx.save();
+    ctx.strokeStyle = 'rgba(48,201,107,.08)';
+    ctx.lineWidth = 36;
+    ctx.beginPath();
+    ctx.arc(-26, -24, 190, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(1100, 1090, 190, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    const centerX = canvas.width / 2;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    const titleY = 125;
+    const titleFont = '700 72px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.font = titleFont;
+
+    const titleLeft = 'ШИФР ';
+    const titleMid = parsed.day ? `#${parsed.day}` : '';
+    const titleRight = parsed.result ? ` ${parsed.result}` : '';
+    const fullTitleWidth =
+      ctx.measureText(titleLeft).width +
+      ctx.measureText(titleMid).width +
+      ctx.measureText(titleRight).width;
+    let titleX = centerX - fullTitleWidth / 2;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(titleLeft, titleX, titleY);
+    titleX += ctx.measureText(titleLeft).width;
+
+    ctx.fillStyle = '#30c96b';
+    ctx.fillText(titleMid, titleX, titleY);
+    titleX += ctx.measureText(titleMid).width;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(titleRight, titleX, titleY);
+
+    const rows = parsed.grid.length;
+    const cols = 5;
+    const gridAreaTop = 235;
+    const gridAreaBottom = 860;
+    const gridAreaHeight = gridAreaBottom - gridAreaTop;
+    const maxGridWidth = 720;
+    const gapX = 24;
+    const gapY = rows >= 6 ? 14 : 20;
+    const diameterByWidth = (maxGridWidth - gapX * (cols - 1)) / cols;
+    const diameterByHeight = (gridAreaHeight - gapY * (rows - 1)) / rows;
+    const diameter = Math.max(58, Math.min(108, diameterByWidth, diameterByHeight));
+    const radius = diameter / 2;
+    const gridWidth = cols * diameter + (cols - 1) * gapX;
+    const gridHeight = rows * diameter + (rows - 1) * gapY;
+    const startX = centerX - gridWidth / 2 + radius;
+    const startY = gridAreaTop + (gridAreaHeight - gridHeight) / 2 + radius;
+
+    const colors = {
+      '⚫': '#4a4d51',
+      '🟡': '#ffd326',
+      '🟢': '#30c96b'
+    };
+
+    parsed.grid.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        const x = startX + colIndex * (diameter + gapX);
+        const y = startY + rowIndex * (diameter + gapY);
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = colors[cell] || '#4a4d51';
+        ctx.fill();
+      });
+    });
+
+    ctx.textBaseline = 'middle';
+    ctx.font = '700 46px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+    const footerLeft = 'Telegram: ';
+    const footerRight = '@shyfr_ua';
+    const footerWidth = ctx.measureText(footerLeft).width + ctx.measureText(footerRight).width;
+    let footerX = centerX - footerWidth / 2;
+    const footerY = 960;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(footerLeft, footerX, footerY);
+    footerX += ctx.measureText(footerLeft).width;
+
+    ctx.fillStyle = '#30c96b';
+    ctx.fillText(footerRight, footerX, footerY);
+
+    const blob = await canvasToBlob(canvas);
+    const filename = parsed.day ? `shyfr-${parsed.day}-threads.png` : 'shyfr-threads.png';
+    return new File([blob], filename, { type: 'image/png' });
+  }
+
+  if (isExternalMobile) {
+    telegramBlock.style.display = 'none';
+    externalBlock.style.display = 'block';
+
+    const threadsShare = document.getElementById('threadsShare');
+    const instagramShare = document.getElementById('instagramShare');
+    const otherShare = document.getElementById('otherShare');
+    const externalNote = document.getElementById('externalNote');
+
+    if (requestedPlatform === 'threads') {
+      instagramShare.style.display = 'none';
+      otherShare.style.display = 'none';
+      externalBlock.querySelector('.lead').textContent = 'Опублікуйте квадратну картинку в Threads';
+    } else if (requestedPlatform === 'instagram') {
+      threadsShare.style.display = 'none';
+      otherShare.style.display = 'none';
+      externalBlock.querySelector('.lead').textContent = 'Опублікуйте картинку в Instagram';
+    }
+
+    const parsed = parseResult(text);
+    const threadsCaption = parsed.header || text.split(/\r?\n/)[0] || 'ШИФР';
+
+    const threadsWebFallback =
+      'https://www.threads.com/intent/post?text=' + encodeURIComponent(threadsCaption);
+
+    const threadsNativeUrl =
+      'barcelona://create?text=' + encodeURIComponent(threadsCaption);
+
+    const threadsIntent =
+      'intent://create?text=' + encodeURIComponent(threadsCaption) +
+      '#Intent;scheme=barcelona;package=com.instagram.barcelona;' +
+      'S.browser_fallback_url=' + encodeURIComponent(threadsWebFallback) + ';end';
+
+    let threadsFile = null;
+    let instagramFile = null;
+    let threadsBuildError = false;
+    let instagramBuildError = false;
+
+    buildThreadsFile(text).then((file) => {
+      threadsFile = file;
+      threadsShare.disabled = false;
+    }).catch(() => {
+      threadsBuildError = true;
+      threadsShare.disabled = false;
+    });
+
+    buildStoryFile(text).then((file) => {
+      instagramFile = file;
+      instagramShare.disabled = false;
+    }).catch(() => {
+      instagramBuildError = true;
+      instagramShare.disabled = false;
+    });
+
+    threadsShare.addEventListener('click', async () => {
+      errorBox.style.display = 'none';
+
+      if (!threadsBuildError && threadsFile && typeof navigator.share === 'function') {
+        const shareData = { files: [threadsFile] };
+        const canShareFiles =
+          typeof navigator.canShare !== 'function' || navigator.canShare(shareData);
+
+        if (canShareFiles) {
+          try {
+            await navigator.share(shareData);
+            return;
+          } catch (err) {
+            if (err && err.name === 'AbortError') return;
+          }
+        }
+      }
+
+      try {
+        window.location.href = /Android/i.test(ua) ? threadsIntent : threadsNativeUrl;
+      } catch (_) {
+        window.location.href = threadsWebFallback;
+      }
+    });
+
+    instagramShare.addEventListener('click', async () => {
+      errorBox.style.display = 'none';
+
+      if (instagramBuildError || !instagramFile) {
+        showError('Не вдалося створити картинку результату. Спробуйте відкрити поширення ще раз.');
+        return;
+      }
+
+      if (typeof navigator.share !== 'function') {
+        showError('Поширення картинок недоступне в цьому браузері.');
+        return;
+      }
+
+      const shareData = { files: [instagramFile] };
+      if (typeof navigator.canShare === 'function' && !navigator.canShare(shareData)) {
+        showError('Цей браузер не підтримує поширення PNG-файлів.');
+        return;
+      }
+
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+        showError('Не вдалося відкрити системне меню. Виберіть Instagram і потрібний формат публікації.');
+      }
+    });
+
+    otherShare.addEventListener('click', async () => {
+      errorBox.style.display = 'none';
+
+      if (typeof navigator.share !== 'function') {
+        showError('Системне меню поширення недоступне в цьому браузері.');
+        return;
+      }
+
+      try {
+        await navigator.share({ text });
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+        showError('Не вдалося відкрити системне меню поширення.');
+      }
+    });
+
+    return;
+  }
+
+  const shareButton = document.getElementById('systemShare');
+
+  shareButton.addEventListener('click', () => {
+    errorBox.style.display = 'none';
+
     try {
-      await systemShare();
-      if (!external) silentlyCredit();
+      const tg = window.Telegram && window.Telegram.WebApp;
+      if (tg && typeof tg.openLink === 'function') {
+        const externalUrl = new URL(window.location.href);
+        externalUrl.searchParams.set('external', '1');
+
+        tg.openLink(externalUrl.toString(), {
+          try_instant_view: false,
+          try_browser: 'chrome'
+        });
+        return;
+      }
     } catch (_) {}
+
+    showError('Не вдалося відкрити сторінку поширення у браузері.');
   });
 })();
 </script>
