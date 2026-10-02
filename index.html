@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
   <title>Поділитися результатом ШИФР</title>
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-13">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-14">
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
     :root {
@@ -167,6 +167,7 @@
   }
 
   const text = decodeBase64Url(q.get('t')) || q.get('text') || '';
+  const ticket = q.get('ticket') || '';
   const ua = navigator.userAgent || '';
   const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
   const gameDate = q.get('gd') || '';
@@ -486,6 +487,30 @@
     return new File([blob], filename, { type: 'image/png' });
   }
 
+  function returnToBotAfterSocialShare() {
+    if (!ticket) {
+      showError('Не вдалося підтвердити поширення. Поверніться в бот і відкрийте його ще раз.');
+      return;
+    }
+
+    const botUrl =
+      'https://t.me/Shyfr_ua_bot?start=socok_' + encodeURIComponent(ticket);
+    const note = document.getElementById('externalNote');
+    if (note) {
+      note.textContent = 'Готово. Повертаємо вас у ШИФР, щоб завершити дію.';
+      const link = document.createElement('a');
+      link.href = botUrl;
+      link.textContent = ' Повернутися в ШИФР';
+      link.style.color = '#ffffff';
+      link.style.fontWeight = '700';
+      note.appendChild(link);
+    }
+
+    setTimeout(() => {
+      window.location.href = botUrl;
+    }, 150);
+  }
+
   if (isExternalMobile) {
     telegramBlock.style.display = 'none';
     externalBlock.style.display = 'block';
@@ -551,6 +576,7 @@
         if (canShareFiles) {
           try {
             await navigator.share(shareData);
+            returnToBotAfterSocialShare();
             return;
           } catch (err) {
             if (err && err.name === 'AbortError') return;
@@ -586,6 +612,7 @@
 
       try {
         await navigator.share(shareData);
+        returnToBotAfterSocialShare();
       } catch (err) {
         if (err && err.name === 'AbortError') return;
         showError('Не вдалося відкрити системне меню. Виберіть Instagram і потрібний формат публікації.');
@@ -602,6 +629,7 @@
 
       try {
         await navigator.share({ text });
+        returnToBotAfterSocialShare();
       } catch (err) {
         if (err && err.name === 'AbortError') return;
         showError('Не вдалося відкрити системне меню поширення.');
