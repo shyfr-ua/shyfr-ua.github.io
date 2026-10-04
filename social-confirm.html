@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-14">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-15">
   <title>Поділитися результатом ШИФР</title>
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
@@ -13,7 +13,7 @@
     *{box-sizing:border-box} body{margin:0;min-height:100vh;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;padding:24px 16px}
     main{width:min(100%,520px)} h1{margin:0 0 10px;text-align:center;font-size:28px;line-height:1.15}.lead{margin:0 0 26px;text-align:center;opacity:.72;font-size:16px;line-height:1.4}
     .share-list{display:grid;gap:12px} button{width:100%;min-height:60px;border:0;border-radius:16px;padding:0 18px;font:inherit;font-size:18px;font-weight:700;cursor:pointer;background:#fff;color:#111}
-    button.secondary{background:#232323;color:#fff} button:disabled{opacity:.55;cursor:default}.note{margin-top:20px;text-align:center;font-size:13px;line-height:1.45;opacity:.56}
+    button.secondary{background:#232323;color:#fff}.note{margin-top:20px;text-align:center;font-size:13px;line-height:1.45;opacity:.56}
     .error{display:none;margin-top:16px;padding:12px 14px;border-radius:12px;background:#2b1c1c;color:#ffd7d7;font-size:14px;line-height:1.4}
   </style>
 </head>
@@ -22,11 +22,11 @@
   <h1>📱 Опублікувати результат</h1>
   <p class="lead">Оберіть, куди поділитися</p>
   <div class="share-list">
-    <button id="threads" type="button" disabled>Threads</button>
-    <button id="instagram" type="button" disabled>Instagram</button>
+    <button id="threads" type="button">Threads</button>
+    <button id="instagram" type="button">Instagram</button>
     <button id="other" class="secondary" type="button">Інші соцмережі</button>
   </div>
-  <p class="note">Оберіть соцмережу нижче. Якщо передумали, просто закрийте системне меню поширення.</p>
+  <p class="note">Після вибору відкриється зовнішній браузер, де працює системне меню поширення. Просто відкрити цей екран не дає шансів.</p>
   <div id="error" class="error"></div>
 </main>
 <script>
@@ -34,73 +34,47 @@
   var q=new URLSearchParams(location.search);
   var ticket=q.get('ticket')||'';
   var gameDate=q.get('gd')||'';
+  var text=q.get('t')||'';
+  var bot=(q.get('bot')||'Shyfr_ua_bot').replace(/^@/,'');
   var tg=window.Telegram&&window.Telegram.WebApp;
   var errorBox=document.getElementById('error');
-  var threadsBtn=document.getElementById('threads');
-  var instagramBtn=document.getElementById('instagram');
-  var otherBtn=document.getElementById('other');
-  var creditSent=false;
 
   function showError(message){errorBox.textContent=message;errorBox.style.display='block'}
-  function clearError(){errorBox.style.display='none'}
-  function decodeBase64Url(value){
-    if(!value)return '';
-    try{var padded=value.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-value.length%4)%4);var bytes=Uint8Array.from(atob(padded),function(c){return c.charCodeAt(0)});return new TextDecoder('utf-8',{fatal:false}).decode(bytes)}catch(e){return ''}
-  }
   function kyivToday(){
     var parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Kyiv',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
     var values={};parts.forEach(function(part){if(part.type!=='literal')values[part.type]=part.value});return values.year+'-'+values.month+'-'+values.day
   }
-  function parseResult(value){
-    var lines=value.split(/\r?\n/).map(function(line){return line.trim()}).filter(Boolean);
-    var header=lines[0]||'ШИФР';var match=header.match(/^ШИФР\s+#?(\d+)\s+(.+)$/i);var day=match?match[1]:'';var result=match?match[2]:header.replace(/^ШИФР\s*/i,'');
-    var colors=new Set(['⚫','🟡','🟢']);var grid=[];
-    lines.slice(1).forEach(function(line){var cells=Array.from(line).filter(function(ch){return colors.has(ch)});if(cells.length===5)grid.push(cells)});
-    return {header:header,day:day,result:result,grid:grid}
+  function externalUrl(platform){
+    var u=new URL('/social-share.html',location.origin);
+    u.searchParams.set('v','51056');
+    u.searchParams.set('t',text);
+    u.searchParams.set('gd',gameDate);
+    u.searchParams.set('ticket',ticket);
+    u.searchParams.set('bot',bot);
+    u.searchParams.set('p',platform);
+    return u.toString();
   }
-  function canvasToBlob(canvas){return new Promise(function(resolve,reject){canvas.toBlob(function(blob){if(blob)resolve(blob);else reject(new Error('PNG'))},'image/png',1)})}
-  async function buildImage(value,story){
-    var parsed=parseResult(value);if(!parsed.grid.length)throw new Error('grid');
-    var canvas=document.createElement('canvas');canvas.width=1080;canvas.height=story?1920:1080;var ctx=canvas.getContext('2d');if(!ctx)throw new Error('canvas');
-    ctx.fillStyle='#101214';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';
-    ctx.font=story?'800 86px system-ui':'700 72px system-ui';ctx.fillText(parsed.day?'ШИФР #'+parsed.day:'ШИФР',540,story?350:125);
-    ctx.font=story?'800 72px system-ui':'700 56px system-ui';ctx.fillText(parsed.result||'',540,story?470:205);
-    var rows=parsed.grid.length,cols=5,gapX=story?34:24,gapY=story?34:(rows>=6?14:20),areaTop=story?640:285,areaBottom=story?1320:845,maxWidth=story?760:720;
-    var areaHeight=areaBottom-areaTop;var diameter=Math.min(108,(maxWidth-gapX*(cols-1))/cols,(areaHeight-gapY*(rows-1))/rows);diameter=Math.max(58,diameter);var radius=diameter/2;
-    var gridWidth=cols*diameter+(cols-1)*gapX,gridHeight=rows*diameter+(rows-1)*gapY,startX=540-gridWidth/2+radius,startY=areaTop+(areaHeight-gridHeight)/2+radius;
-    var map={'⚫':'#4a4d51','🟡':'#ffd326','🟢':'#30c96b'};
-    parsed.grid.forEach(function(row,ri){row.forEach(function(cell,ci){ctx.beginPath();ctx.arc(startX+ci*(diameter+gapX),startY+ri*(diameter+gapY),radius,0,Math.PI*2);ctx.fillStyle=map[cell]||'#4a4d51';ctx.fill()})});
-    ctx.fillStyle='#fff';ctx.font=story?'700 52px system-ui':'700 46px system-ui';ctx.fillText('Telegram: @shyfr_ua',540,story?1575:965);
-    if(story){ctx.fillStyle='rgba(255,255,255,.5)';ctx.font='500 34px system-ui';ctx.fillText('5 літер · 6 спроб',540,1650)}
-    var blob=await canvasToBlob(canvas);var name=story?'shyfr-instagram.png':'shyfr-threads.png';return new File([blob],name,{type:'image/png'})
-  }
-  function completeShare(){
-    if(creditSent)return;creditSent=true;
-    if(!tg||typeof tg.sendData!=='function'){creditSent=false;showError('Не вдалося підтвердити поширення в Telegram. Поверніться в бот і спробуйте ще раз.');return}
-    try{tg.sendData(JSON.stringify({type:'social_share_completed',ticket:ticket}))}catch(e){creditSent=false;showError('Не вдалося підтвердити поширення. Поверніться в бот і спробуйте ще раз.')}
-  }
-  async function shareFile(file){
-    clearError();if(typeof navigator.share!=='function'){showError('Системне меню поширення недоступне на цьому пристрої.');return}
-    var data={files:[file]};if(typeof navigator.canShare==='function'&&!navigator.canShare(data)){showError('Цей Telegram не підтримує поширення PNG-файлів. Оновіть Telegram і спробуйте ще раз.');return}
-    try{await navigator.share(data);completeShare()}catch(err){if(err&&err.name==='AbortError')return;showError('Не вдалося відкрити системне меню поширення.')}
-  }
-  async function shareText(){
-    clearError();if(typeof navigator.share!=='function'){showError('Системне меню поширення недоступне на цьому пристрої.');return}
-    try{await navigator.share({text:text});completeShare()}catch(err){if(err&&err.name==='AbortError')return;showError('Не вдалося відкрити системне меню поширення.')}
+  function openExternal(platform){
+    errorBox.style.display='none';
+    if(!ticket||!text||!gameDate||gameDate!==kyivToday()){
+      showError('Не вдалося відкрити актуальний результат. Поверніться в бот і спробуйте ще раз.');
+      return;
+    }
+    if(!tg||typeof tg.openLink!=='function'){
+      showError('Відкрийте цей екран через кнопку «📱 Відкрити соцмережі» у боті.');
+      return;
+    }
+    try{
+      tg.openLink(externalUrl(platform),{try_instant_view:false});
+    }catch(e){
+      showError('Не вдалося відкрити зовнішній браузер. Спробуйте ще раз.');
+    }
   }
 
-  var text=decodeBase64Url(q.get('t'))||q.get('text')||'';
-  if(!ticket||!text){threadsBtn.disabled=true;instagramBtn.disabled=true;otherBtn.disabled=true;showError('Не вдалося отримати дані результату. Поверніться в бот і відкрийте поширення ще раз.');return}
-  if(!gameDate||gameDate!==kyivToday()){threadsBtn.disabled=true;instagramBtn.disabled=true;otherBtn.disabled=true;showError('Поділитися можна лише результатом сьогоднішнього ШИФРУ.');return}
   try{if(tg&&typeof tg.ready==='function')tg.ready();if(tg&&typeof tg.expand==='function')tg.expand()}catch(e){}
-  if(!tg||typeof tg.sendData!=='function'){showError('Відкрийте цю сторінку через кнопку «📱 Відкрити соцмережі» у боті.')}
-
-  var threadsFile=null,instagramFile=null;
-  buildImage(text,false).then(function(file){threadsFile=file;threadsBtn.disabled=false}).catch(function(){threadsBtn.disabled=false});
-  buildImage(text,true).then(function(file){instagramFile=file;instagramBtn.disabled=false}).catch(function(){instagramBtn.disabled=false});
-  threadsBtn.addEventListener('click',function(){if(!threadsFile){showError('Не вдалося створити картинку. Відкрийте поширення ще раз.');return}shareFile(threadsFile)});
-  instagramBtn.addEventListener('click',function(){if(!instagramFile){showError('Не вдалося створити картинку. Відкрийте поширення ще раз.');return}shareFile(instagramFile)});
-  otherBtn.addEventListener('click',shareText);
+  document.getElementById('threads').addEventListener('click',function(){openExternal('threads')});
+  document.getElementById('instagram').addEventListener('click',function(){openExternal('instagram')});
+  document.getElementById('other').addEventListener('click',function(){openExternal('other')});
 })();
 </script>
 </body>
