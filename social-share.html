@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-15">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-16">
   <title>Поділитися результатом ШИФР</title>
   <style>
     :root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
@@ -87,11 +87,14 @@
 
   function markShareCompleted(){
     returnBox.style.display='block';
-    note.textContent='Поширення передано застосунку. Поверніться в ШИФР кнопкою нижче, щоб зарахувати +5.';
-    returnLink.href=tgReturn;
-    returnLink.addEventListener('click',function(){
-      setTimeout(function(){window.location.href=webReturn},900);
-    },{once:true});
+    note.textContent='Поширення передано застосунку. Повертаємо Вас у ШИФР і зараховуємо +5.';
+    returnLink.href=webReturn;
+    // v5.10.58: returning to the bot is automatic. The visible button is only
+    // a fallback for browsers that block custom Telegram protocol navigation.
+    try{ window.location.href=tgReturn; }catch(e){}
+    setTimeout(function(){
+      try{ window.location.href=webReturn; }catch(e){}
+    },900);
   }
 
   async function sharePrepared(){
