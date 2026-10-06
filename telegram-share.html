@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-16">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-17">
   <title>Надіслати результат ШИФР</title>
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
@@ -77,14 +77,30 @@
       return;
     }
     inProgress=true;
+    button.disabled=true;
+    note.textContent='Відкриваємо список чатів…';
+
+    // Some Telegram Android builds may fail to invoke the callback if the
+    // native picker itself fails to open. Never leave the UI locked forever.
+    var unlockTimer=setTimeout(function(){
+      if(!inProgress)return;
+      inProgress=false;
+      button.disabled=false;
+      note.textContent='Не вдалося відкрити список чатів автоматично. Натисніть «Вибрати чат» ще раз.';
+    },3500);
+
     try{
       tg.shareMessage(preparedId,function(sent){
+        clearTimeout(unlockTimer);
         inProgress=false;
+        button.disabled=false;
         if(sent){returnToBot()}
         else{note.textContent='Надсилання скасовано. Шанс не нараховано.'}
       });
     }catch(e){
+      clearTimeout(unlockTimer);
       inProgress=false;
+      button.disabled=false;
       showError('Не вдалося відкрити список чатів. Спробуйте ще раз.');
     }
   }
@@ -96,10 +112,10 @@
     return;
   }
   try{if(tg&&typeof tg.ready==='function')tg.ready();if(tg&&typeof tg.expand==='function')tg.expand()}catch(e){}
+  // Important: do not auto-run shareMessage on page load. Telegram Android
+  // may reject that call without a fresh user gesture and never call back.
+  // The native destination picker is opened only by this real button tap.
   button.addEventListener('click',runShare);
-  // The Mini App was opened by the user's Telegram-share button, so try the
-  // native destination picker immediately. The visible button is a fallback.
-  setTimeout(runShare,220);
 })();
 </script>
 </body>
