@@ -26,7 +26,7 @@
     <button id="instagram" type="button">Instagram</button>
     <button id="other" class="secondary" type="button">Інші соцмережі</button>
   </div>
-  <p class="note">Після вибору відкриється зовнішній браузер, де працює системне меню поширення. Просто відкрити цей екран не дає шансів.</p>
+  <p class="note">Після вибору відкриється зовнішній браузер із системним меню поширення.</p>
   <div id="error" class="error"></div>
 </main>
 <script>
@@ -46,7 +46,7 @@
   }
   function externalUrl(platform){
     var u=new URL('/social-share.html',location.origin);
-    u.searchParams.set('v','51058');
+    u.searchParams.set('v','51062');
     u.searchParams.set('t',text);
     u.searchParams.set('gd',gameDate);
     u.searchParams.set('ticket',ticket);
