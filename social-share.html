@@ -25,7 +25,7 @@
   <div id="returnBox">
     <a id="returnLink" class="action" href="#">↩️ Повернутися в ШИФР</a>
   </div>
-  <p id="note" class="note">Якщо передумаєте і закриєте системне меню, шансів не буде нараховано.</p>
+  <p id="note" class="note">Якщо передумаєте, просто закрийте системне меню.</p>
   <div id="error" class="error"></div>
 </main>
 <script>
@@ -56,11 +56,23 @@
     var values={};parts.forEach(function(part){if(part.type!=='literal')values[part.type]=part.value});return values.year+'-'+values.month+'-'+values.day
   }
   function parseResult(value){
-    var lines=value.split(/\r?\n/).map(function(line){return line.trim()}).filter(Boolean);
-    var header=lines[0]||'ШИФР';var match=header.match(/^ШИФР\s+#?(\d+)\s+(.+)$/i);var day=match?match[1]:'';var result=match?match[2]:header.replace(/^ШИФР\s*/i,'');
-    var colors=new Set(['⚫','🟡','🟢']);var grid=[];
-    lines.slice(1).forEach(function(line){var cells=Array.from(line).filter(function(ch){return colors.has(ch)});if(cells.length===5)grid.push(cells)});
-    return {header:header,day:day,result:result,grid:grid}
+    var lines=value.split(/?
+/).map(function(line){return line.trim()}).filter(Boolean);
+    var header=lines[0]||'ШИФР';var match=header.match(/^ШИФРs+#?(d+)s+(.+)$/i);var day=match?match[1]:'';var result=match?match[2]:header.replace(/^ШИФРs*/i,'');
+    var colors=new Set(['⚫','🟡','🟢']);var grid=[];var badge='';
+    lines.slice(1).forEach(function(line){
+      var cells=Array.from(line).filter(function(ch){return colors.has(ch)});
+      if(cells.length===5){grid.push(cells);return}
+      if(/^Telegram:/i.test(line)||/^@Shyfr_ua_bot$/i.test(line))return;
+      if(!badge)badge=line;
+    });
+    return {header:header,day:day,result:result,grid:grid,badge:badge}
+  }
+  function drawFittedText(ctx,text,x,y,maxWidth,startSize,minSize,weight){
+    if(!text)return;
+    var size=startSize;
+    while(size>minSize){ctx.font=(weight||'700')+' '+size+'px system-ui';if(ctx.measureText(text).width<=maxWidth)break;size-=2}
+    ctx.font=(weight||'700')+' '+Math.max(minSize,size)+'px system-ui';ctx.fillText(text,x,y,maxWidth)
   }
   function canvasToBlob(canvas){return new Promise(function(resolve,reject){canvas.toBlob(function(blob){if(blob)resolve(blob);else reject(new Error('PNG'))},'image/png',1)})}
   async function buildImage(value,story){
@@ -69,13 +81,14 @@
     ctx.fillStyle='#101214';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';
     ctx.font=story?'800 86px system-ui':'700 72px system-ui';ctx.fillText(parsed.day?'ШИФР #'+parsed.day:'ШИФР',540,story?350:125);
     ctx.font=story?'800 72px system-ui':'700 56px system-ui';ctx.fillText(parsed.result||'',540,story?470:205);
-    var rows=parsed.grid.length,cols=5,gapX=story?34:24,gapY=story?34:(rows>=6?14:20),areaTop=story?640:285,areaBottom=story?1320:845,maxWidth=story?760:720;
+    var rows=parsed.grid.length,cols=5,gapX=story?34:24,gapY=story?34:(rows>=6?14:20),areaTop=story?610:275,areaBottom=story?(parsed.badge?1260:1360):(parsed.badge?760:855),maxWidth=story?760:720;
     var areaHeight=areaBottom-areaTop;var diameter=Math.min(108,(maxWidth-gapX*(cols-1))/cols,(areaHeight-gapY*(rows-1))/rows);diameter=Math.max(58,diameter);var radius=diameter/2;
     var gridWidth=cols*diameter+(cols-1)*gapX,gridHeight=rows*diameter+(rows-1)*gapY,startX=540-gridWidth/2+radius,startY=areaTop+(areaHeight-gridHeight)/2+radius;
     var map={'⚫':'#4a4d51','🟡':'#ffd326','🟢':'#30c96b'};
     parsed.grid.forEach(function(row,ri){row.forEach(function(cell,ci){ctx.beginPath();ctx.arc(startX+ci*(diameter+gapX),startY+ri*(diameter+gapY),radius,0,Math.PI*2);ctx.fillStyle=map[cell]||'#4a4d51';ctx.fill()})});
-    ctx.fillStyle='#fff';ctx.font=story?'700 52px system-ui':'700 46px system-ui';ctx.fillText('Telegram: @shyfr_ua',540,story?1575:965);
-    if(story){ctx.fillStyle='rgba(255,255,255,.5)';ctx.font='500 34px system-ui';ctx.fillText('5 літер · 6 спроб',540,1650)}
+    if(parsed.badge){ctx.fillStyle='#fff';drawFittedText(ctx,parsed.badge,540,story?1410:850,story?900:950,story?54:46,story?34:28,'800')}
+    ctx.fillStyle='#fff';ctx.font=story?'700 52px system-ui':'700 46px system-ui';ctx.fillText('Telegram: @Shyfr_ua_bot',540,story?1580:970);
+    if(story){ctx.fillStyle='rgba(255,255,255,.5)';ctx.font='500 34px system-ui';ctx.fillText('5 літер · 6 спроб',540,1655)}
     var blob=await canvasToBlob(canvas);var name=story?'shyfr-instagram.png':'shyfr-threads.png';return new File([blob],name,{type:'image/png'})
   }
 
@@ -87,14 +100,11 @@
 
   function markShareCompleted(){
     returnBox.style.display='block';
-    note.textContent='Поширення передано застосунку. Повертаємо Вас у ШИФР і зараховуємо +5.';
-    returnLink.href=webReturn;
-    // v5.10.58: returning to the bot is automatic. The visible button is only
-    // a fallback for browsers that block custom Telegram protocol navigation.
-    try{ window.location.href=tgReturn; }catch(e){}
-    setTimeout(function(){
-      try{ window.location.href=webReturn; }catch(e){}
-    },900);
+    note.textContent='Готово. Поверніться в ШИФР кнопкою нижче.';
+    returnLink.href=tgReturn;
+    returnLink.addEventListener('click',function(){
+      setTimeout(function(){window.location.href=webReturn},900);
+    },{once:true});
   }
 
   async function sharePrepared(){
