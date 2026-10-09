@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-19">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-20">
   <title>Надіслати результат ШИФР</title>
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
@@ -22,7 +22,7 @@
   <h1>📤 Надіслати результат</h1>
   <p class="lead">Оберіть чат у Telegram</p>
   <button id="share" type="button">📤 Вибрати чат</button>
-  <div id="refreshBox"><a id="refreshLink" class="action secondary" href="#">🔄 Оновити надсилання</a></div>
+  <div id="refreshBox"><a id="refreshLink" class="action secondary" href="#">↩️ Відкрити надсилання в ШИФРІ</a></div>
   <div id="returnBox"><a id="returnLink" class="action" href="#">↩️ Повернутися в ШИФР</a></div>
   <p id="note" class="note">Після успішного надсилання +1 шанс зарахується автоматично.</p>
   <div id="error" class="error"></div>
@@ -148,10 +148,13 @@
     if(tg&&typeof tg.expand==='function')tg.expand();
     if(tg&&typeof tg.onEvent==='function')tg.onEvent('shareMessageFailed',shareFailed);
   }catch(e){}
-  if(gameDate!==kyivToday()&&!isFresh){
-    button.style.display='none';
-    showRefresh('Для результату за попередній день оновіть надсилання. За минулі дні нові шанси не нараховуються.');
-  }
+  // Legacy prepared-message links always expire. Never start the native
+  // shareMessage picker for a link that might be stale: some Android Telegram
+  // versions hang showing a spinner instead of reporting MESSAGE_EXPIRED.
+  button.style.display='none';
+  showRefresh(gameDate===kyivToday()
+    ? 'Ця кнопка створена за старим способом. Перейдіть у ШИФР, щоб одразу вибрати чат без обмеження часу.'
+    : 'Для результату за попередній день перейдіть у ШИФР. За минулі дні нові шанси не нараховуються.');
   // Important: do not auto-run shareMessage on page load. Telegram Android
   // may reject that call without a fresh user gesture and never call back.
   // The native destination picker is opened only by this real button tap.
