@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-17">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-19">
   <title>Надіслати результат ШИФР</title>
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
@@ -14,7 +14,7 @@
     main{width:min(100%,520px)}h1{margin:0 0 10px;text-align:center;font-size:28px;line-height:1.15}.lead{margin:0 0 26px;text-align:center;opacity:.72;font-size:16px;line-height:1.4}
     button,a.action{width:100%;min-height:60px;border:0;border-radius:16px;padding:0 18px;font:inherit;font-size:18px;font-weight:700;cursor:pointer;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;text-decoration:none}
     .note{margin-top:20px;text-align:center;font-size:13px;line-height:1.45;opacity:.56}.error{display:none;margin-top:16px;padding:12px 14px;border-radius:12px;background:#2b1c1c;color:#ffd7d7;font-size:14px;line-height:1.4}
-    #returnBox{display:none;margin-top:14px}
+    #returnBox,#refreshBox{display:none;margin-top:14px} a.action.secondary{background:#292929;color:#fff}
   </style>
 </head>
 <body>
@@ -22,6 +22,7 @@
   <h1>📤 Надіслати результат</h1>
   <p class="lead">Оберіть чат у Telegram</p>
   <button id="share" type="button">📤 Вибрати чат</button>
+  <div id="refreshBox"><a id="refreshLink" class="action secondary" href="#">🔄 Оновити надсилання</a></div>
   <div id="returnBox"><a id="returnLink" class="action" href="#">↩️ Повернутися в ШИФР</a></div>
   <p id="note" class="note">Після успішного надсилання +1 шанс зарахується автоматично.</p>
   <div id="error" class="error"></div>
@@ -33,16 +34,34 @@
   var ticket=q.get('ticket')||'';
   var gameDate=q.get('gd')||'';
   var bot=(q.get('bot')||'Shyfr_ua_bot').replace(/^@/,'');
+  var isFresh=q.get('fresh')==='1';
   var tg=window.Telegram&&window.Telegram.WebApp;
   var button=document.getElementById('share');
   var note=document.getElementById('note');
   var errorBox=document.getElementById('error');
+  var refreshBox=document.getElementById('refreshBox');
+  var refreshLink=document.getElementById('refreshLink');
   var returnBox=document.getElementById('returnBox');
   var returnLink=document.getElementById('returnLink');
   var inProgress=false;
+  var lastShareError='';
 
   function showError(message){errorBox.textContent=message;errorBox.style.display='block'}
   function clearError(){errorBox.style.display='none'}
+  function showRefresh(message){
+    if(message)note.textContent=message;
+    refreshBox.style.display='block';
+  }
+  function errorText(code){
+    if(code==='USER_DECLINED')return 'Надсилання скасовано. Шанс не нараховано.';
+    if(code==='MESSAGE_EXPIRED'||code==='ID_EXPIRED')return 'Термін дії старої кнопки минув. Натисніть «Оновити надсилання».';
+    return 'Не вдалося надіслати результат. Оновіть надсилання та спробуйте ще раз.';
+  }
+  function shareFailed(data){
+    lastShareError=String((data&&data.error)||'UNKNOWN_ERROR');
+    if(lastShareError==='USER_DECLINED')note.textContent=errorText(lastShareError);
+    else showRefresh(errorText(lastShareError));
+  }
   function kyivToday(){
     var parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Kyiv',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
     var values={};parts.forEach(function(part){if(part.type!=='literal')values[part.type]=part.value});return values.year+'-'+values.month+'-'+values.day
@@ -55,11 +74,12 @@
   }
   function returnToBot(){
     var n=nonce();
+    var isToday=gameDate===kyivToday();
     var start='tgdone_'+ticket+'_'+n;
-    var url='https://t.me/'+encodeURIComponent(bot)+'?start='+encodeURIComponent(start);
+    var url='https://t.me/'+encodeURIComponent(bot)+(isToday?'?start='+encodeURIComponent(start):'');
     returnBox.style.display='block';
     returnLink.href=url;
-    note.textContent='Результат надіслано. Зараховуємо +1 і повертаємо Вас у ШИФР.';
+    note.textContent=isToday?'Результат надіслано. Повертаємо Вас у ШИФР.':'Результат надіслано. За результати минулих днів шанси не нараховуються.';
     try{
       if(tg&&typeof tg.openTelegramLink==='function'){
         tg.openTelegramLink(url);
@@ -72,8 +92,9 @@
   function runShare(){
     clearError();
     if(inProgress)return;
+    lastShareError='';
     if(!tg||typeof tg.shareMessage!=='function'){
-      showError('Оновіть Telegram до актуальної версії та спробуйте ще раз.');
+      showRefresh('Оновіть Telegram до актуальної версії та спробуйте ще раз.');
       return;
     }
     inProgress=true;
@@ -86,7 +107,7 @@
       if(!inProgress)return;
       inProgress=false;
       button.disabled=false;
-      note.textContent='Не вдалося відкрити список чатів автоматично. Натисніть «Вибрати чат» ще раз.';
+      showRefresh('Не вдалося відкрити список чатів. Оновіть надсилання та спробуйте ще раз.');
     },3500);
 
     try{
@@ -95,23 +116,42 @@
         inProgress=false;
         button.disabled=false;
         if(sent){returnToBot()}
-        else{note.textContent='Надсилання скасовано. Шанс не нараховано.'}
+        else if(lastShareError==='USER_DECLINED'){note.textContent=errorText(lastShareError)}
+        else{showRefresh(errorText(lastShareError))}
       });
     }catch(e){
       clearTimeout(unlockTimer);
       inProgress=false;
       button.disabled=false;
-      showError('Не вдалося відкрити список чатів. Спробуйте ще раз.');
+      showRefresh('Не вдалося відкрити список чатів. Оновіть надсилання та спробуйте ще раз.');
     }
   }
 
-  if(!preparedId||!ticket||!gameDate||gameDate!==kyivToday()||
-     !/^[A-Za-z0-9_-]{20,64}$/.test(ticket)||!/^[A-Za-z0-9_]{3,64}$/.test(bot)){
+  if(!preparedId||!/^[A-Za-z0-9_-]{20,64}$/.test(ticket)||
+     !/^\d{4}-\d{2}-\d{2}$/.test(gameDate)||
+     Number.isNaN(Date.parse(gameDate+'T00:00:00Z'))||gameDate>kyivToday()||
+     !/^[A-Za-z0-9_]{3,64}$/.test(bot)){
     button.style.display='none';
-    showError('Це посилання неактуальне. Поверніться в бот і використайте кнопку під сьогоднішнім результатом.');
+    showError('Некоректне посилання на результат. Поверніться до бота.');
     return;
   }
-  try{if(tg&&typeof tg.ready==='function')tg.ready();if(tg&&typeof tg.expand==='function')tg.expand()}catch(e){}
+  var refreshUrl='https://t.me/'+encodeURIComponent(bot)+'?start='+encodeURIComponent('tgrefresh_'+ticket);
+  refreshLink.href=refreshUrl;
+  refreshLink.addEventListener('click',function(event){
+    try{if(tg&&typeof tg.openTelegramLink==='function'){
+      event.preventDefault();
+      tg.openTelegramLink(refreshUrl);
+    }}catch(e){}
+  });
+  try{
+    if(tg&&typeof tg.ready==='function')tg.ready();
+    if(tg&&typeof tg.expand==='function')tg.expand();
+    if(tg&&typeof tg.onEvent==='function')tg.onEvent('shareMessageFailed',shareFailed);
+  }catch(e){}
+  if(gameDate!==kyivToday()&&!isFresh){
+    button.style.display='none';
+    showRefresh('Для результату за попередній день оновіть надсилання. За минулі дні нові шанси не нараховуються.');
+  }
   // Important: do not auto-run shareMessage on page load. Telegram Android
   // may reject that call without a fresh user gesture and never call back.
   // The native destination picker is opened only by this real button tap.
