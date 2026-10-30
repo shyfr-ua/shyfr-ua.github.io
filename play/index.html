@@ -160,7 +160,7 @@
     <a href="./privacy.html">Конфіденційність і аналітика</a>
   </footer>
   <aside class="consent" id="consent" aria-label="Згода на аналітику">
-    <div><h2>Допоможіть покращити ШИФР</h2><p>За вашою згодою вимірюємо перегляди й переходи в Telegram за допомогою OpenAI Pixel. Можна грати й без аналітики. <a href="./privacy.html">Докладніше</a>.</p></div>
+    <div><h2>Допоможіть покращити ШИФР</h2><p>За вашою згодою вимірюємо перегляди й переходи в Telegram через Meta Pixel. OpenAI Pixel використовується лише якщо його окремо налаштовано. Можна грати й без аналітики. <a href="./privacy.html">Докладніше</a>.</p></div>
     <div class="consent-buttons"><button class="allow" id="consent-allow" type="button">Дозволити</button><button class="deny" id="consent-deny" type="button">Без аналітики</button></div>
   </aside>
   <div class="debug wrap" id="debug"></div>
@@ -170,7 +170,7 @@
     var BOT = "Shyfr_ua_bot";
     var CONFIG = window.SHYFR_ADS_CONFIG || {};
     var STORAGE_KEY = "shyfr_landing_attribution_v1";
-    var CONSENT_KEY = "shyfr_measurement_consent_v1";
+    var CONSENT_KEY = "shyfr_measurement_consent_v2"; // Fresh opt-in for adding Meta Pixel
     var MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
     var qs = new URLSearchParams(window.location.search);
     function safeStoreGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
@@ -200,13 +200,18 @@
     var payload = "src_"+sourceCode;
     var tgHref = "https://t.me/"+BOT+"?start="+encodeURIComponent(payload);
     document.querySelectorAll(".tg-link").forEach(function(el) { el.href=tgHref; el.rel="noopener noreferrer"; });
-    function pixelConfigured() {
+    function openaiPixelConfigured() {
       return typeof CONFIG.pixelId==="string" && CONFIG.pixelId.trim().length>0 && CONFIG.pixelId!=="PASTE_PIXEL_ID_HERE";
     }
-    var pixelOn = false;
-    function loadPixel() {
-      if(pixelOn || !pixelConfigured()) return;
-      pixelOn = true;
+    function metaPixelConfigured() {
+      // Dataset / Meta Pixel ID is numeric. Never place a CAPI access token here.
+      return typeof CONFIG.metaPixelId==="string" && /^\d{10,25}$/.test(CONFIG.metaPixelId.trim());
+    }
+    var openaiPixelOn = false;
+    var metaPixelOn = false;
+    function loadOpenAIPixel() {
+      if(openaiPixelOn || !openaiPixelConfigured()) return;
+      openaiPixelOn = true;
       (function(w,d,s,u) {
         if(w.oaiq) return;
         var q=function(){ q.q.push(arguments); };
@@ -218,9 +223,37 @@
       window.oaiq("init",{pixelId: CONFIG.pixelId.trim()});
       window.oaiq("measure","page_viewed",{type:"contents",contents:[{id:"shyfr_landing",name:"ШИФР лендінг",content_type:"page"}]});
     }
+    function loadMetaPixel() {
+      if(metaPixelOn || !metaPixelConfigured()) return;
+      metaPixelOn = true;
+      // Official Meta Pixel browser queue, initialized only after opt-in.
+      !function(f,b,e,v,n,t,s) {
+        if(f.fbq) return;
+        n=f.fbq=function() { n.callMethod ? n.callMethod.apply(n,arguments) : n.queue.push(arguments); };
+        if(!f._fbq) f._fbq=n;
+        n.push=n; n.loaded=!0; n.version="2.0"; n.queue=[];
+        t=b.createElement(e); t.async=!0; t.src=v;
+        s=b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t,s);
+      }(window,document,"script","https://connect.facebook.net/en_US/fbevents.js");
+      // We send only explicitly defined events; avoid extra automated events.
+      window.fbq("set","autoConfig",false,CONFIG.metaPixelId.trim());
+      window.fbq("init",CONFIG.metaPixelId.trim());
+      window.fbq("track","PageView");
+    }
+    function loadPixels() {
+      loadMetaPixel();
+      loadOpenAIPixel();
+    }
     document.querySelectorAll(".tg-link").forEach(function(el) {
       el.addEventListener("click",function() {
-        if(pixelOn && typeof window.oaiq==="function") {
+        if(metaPixelOn && typeof window.fbq==="function") {
+          // This is an outbound click, NOT a confirmed Telegram game start.
+          window.fbq("trackCustom","TelegramOpenClick",{
+            content_name:"shyfr_telegram",
+            source_tag:sourceCode
+          });
+        }
+        if(openaiPixelOn && typeof window.oaiq==="function") {
           window.oaiq("measure","custom",{type:"custom"},{custom_event_name:"telegram_open_clicked"});
         }
         try { sessionStorage.setItem("shyfr_last_telegram_click",JSON.stringify({source:sourceCode,at:Date.now()})); } catch (_) {}
@@ -228,16 +261,27 @@
     });
     var consent = safeStoreGet(CONSENT_KEY);
     var banner = document.getElementById("consent");
-    if(consent==="yes") loadPixel();
+    if(consent==="yes") loadPixels();
     else if(consent!=="no") banner.classList.add("visible");
-    function choose(choice) { safeStoreSet(CONSENT_KEY,choice); banner.classList.remove("visible"); if(choice==="yes") loadPixel(); }
+    function choose(choice) {
+      consent=choice;
+      safeStoreSet(CONSENT_KEY,choice);
+      banner.classList.remove("visible");
+      if(choice==="yes") loadPixels();
+      updateDebug();
+    }
     document.getElementById("consent-allow").addEventListener("click",function(){choose("yes");});
     document.getElementById("consent-deny").addEventListener("click",function(){choose("no");});
     var debug=document.getElementById("debug");
-    if(qs.get("debug")==="1") {
+    function updateDebug() {
+      if(qs.get("debug")!=="1") return;
       debug.classList.add("visible");
-      debug.textContent="UTM: "+JSON.stringify(attribution)+" | Telegram: "+tgHref+" | Pixel configured: "+pixelConfigured()+" | Consent: "+(consent||"not set")+" | Pixel loaded: "+pixelOn;
+      debug.textContent="UTM: "+JSON.stringify(attribution)+" | Telegram: "+tgHref+
+        " | Meta configured: "+metaPixelConfigured()+" / active: "+metaPixelOn+
+        " | OpenAI configured: "+openaiPixelConfigured()+" / active: "+openaiPixelOn+
+        " | Consent: "+(consent||"not set");
     }
+    updateDebug();
     window.SHYFR_LANDING = Object.freeze({source:sourceCode,payload:payload,url:tgHref});
   })();
   </script>
