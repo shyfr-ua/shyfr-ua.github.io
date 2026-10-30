@@ -160,7 +160,7 @@
     <a href="./privacy.html">Конфіденційність і аналітика</a>
   </footer>
   <aside class="consent" id="consent" aria-label="Згода на аналітику">
-    <div><h2>Допоможіть покращити ШИФР</h2><p>За вашою згодою вимірюємо перегляди й переходи в Telegram через Meta Pixel. OpenAI Pixel використовується лише якщо його окремо налаштовано. Можна грати й без аналітики. <a href="./privacy.html">Докладніше</a>.</p></div>
+    <div><h2>Допоможіть покращити ШИФР</h2><p>За вашою згодою Meta Pixel вимірює відвідування та натискання. Після окремого підключення серверної аналітики ми також зможемо передавати Meta фактичний початок і завершення гри, використовуючи рекламні ідентифікатори. Можна грати без аналітики. <a href="./privacy.html">Докладніше</a>.</p></div>
     <div class="consent-buttons"><button class="allow" id="consent-allow" type="button">Дозволити</button><button class="deny" id="consent-deny" type="button">Без аналітики</button></div>
   </aside>
   <div class="debug wrap" id="debug"></div>
@@ -170,7 +170,7 @@
     var BOT = "Shyfr_ua_bot";
     var CONFIG = window.SHYFR_ADS_CONFIG || {};
     var STORAGE_KEY = "shyfr_landing_attribution_v1";
-    var CONSENT_KEY = "shyfr_measurement_consent_v2"; // Fresh opt-in for adding Meta Pixel
+    var CONSENT_KEY = "shyfr_measurement_consent_v3"; // Fresh opt-in for adding Meta Pixel
     var MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
     var qs = new URLSearchParams(window.location.search);
     function safeStoreGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
@@ -285,5 +285,6 @@
     window.SHYFR_LANDING = Object.freeze({source:sourceCode,payload:payload,url:tgHref});
   })();
   </script>
+  <script src="./meta-bridge.js" defer></script>
 </body>
 </html>
