@@ -45,8 +45,10 @@
       if(localStorage.getItem(consentKey)!=="yes"){diag("consent_required");return "";}
     } catch (_) {diag("storage_unavailable");return "";}
     const pair=ids();
-    if(!pair.fbc&&!pair.fbp){diag("no_valid_meta_ids");return "";}
-    diag("requesting_worker");
+    // Never invent a Meta cookie. If none exists, let Cloudflare try the
+    // visitor\'s original consented IP and User-Agent as a weaker fallback.
+    const contextOnly=!pair.fbc&&!pair.fbp;
+    diag(contextOnly?"requesting_worker_context_only":"requesting_worker");
     const controller=new AbortController();
     const timeout=setTimeout(()=>controller.abort(),3000);
     try {
@@ -59,7 +61,7 @@
       if(!response.ok){diag("worker_http_"+response.status);return "";}
       const body=await response.json();
       const token=typeof body.token==="string" && /^[A-Za-z0-9_-]{16,32}$/.test(body.token) ? body.token : "";
-      diag(token?"token_created":"invalid_worker_response");
+      diag(token?(contextOnly?"token_created_context_only":"token_created_with_meta_id"):"invalid_worker_response");
       return token;
     }catch(e){diag(e&&e.name==="AbortError"?"worker_timeout":"worker_network_error");return "";}
     finally{clearTimeout(timeout);}
