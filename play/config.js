@@ -3,6 +3,6 @@
 // Вставте числовий Meta Pixel ID після створення. До цього скрипт Meta не завантажується.
 // OpenAI Pixel залишено вимкненим до окремого налаштування.
 window.SHYFR_ADS_CONFIG = Object.freeze({
-  metaPixelId: "",
+  metaPixelId: "5069422826617791",
   pixelId: ""
 });
