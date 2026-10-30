@@ -1,0 +1,28 @@
+<!doctype html><html lang="uk"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111d19"><title>Конфіденційність | ШИФР</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#111d19;color:#edf3e9;font:16px/1.7 system-ui,-apple-system,"Segoe UI",sans-serif;padding:28px 18px}
+main{max-width:700px;margin:auto}a{color:#b2f3c6}h1{font-size:clamp(30px,5vw,43px);line-height:1.2;margin:38px 0 22px}h2{font-size:20px;margin:30px 0 8px}p,li{color:#c3d4c8}button{margin:14px 0 25px;background:#b2f3c6;color:#12231a;border:0;border-radius:11px;padding:12px 17px;font-weight:800;cursor:pointer}small{color:#9eb0a2}
+</style></head><body><main>
+<a href="./">← Повернутися до ШИФРУ</a>
+<h1>Конфіденційність і аналітика</h1>
+<p>Ця сторінка пояснює, як працює рекламний лендінг гри «ШИФР». Грати можна без згоди на рекламну аналітику.</p>
+<h2>Джерела переходів</h2>
+<p>Ми зчитуємо UTM-мітки з адреси сторінки (наприклад, utm_source, utm_campaign, utm_content), щоб розуміти, звідки прийшов новий гравець. Позначення зберігаються у браузері для переходу в Telegram; повторно використовуємо їх не довше 7 днів після останнього рекламного входу. У Telegram передається короткий технічний код джерела, кампанії та варіанту оголошення у параметрі /start. Сторінка не передає в Telegram ідентифікатор oppref.</p>
+<h2>OpenAI Pixel</h2>
+<p>Якщо ви натиснете «Дозволити», за умови налаштованого Pixel ID, сторінка завантажить OpenAI Pixel та надсилатиме події перегляду лендінгу й натискання переходу в Telegram. Pixel може використовувати рекламний ідентифікатор переходу oppref для атрибуції. До отримання згоди Pixel не завантажується. Поки Pixel ID не налаштовано, події OpenAI не відправляються, навіть за згодою.</p>
+<p>Натискання кнопки «Грати» не означає, що ви почали гру. Фактичний початок і завершення гри рахує Telegram-бот окремо. Ми не продаємо дані користувачів через цей лендінг.</p>
+<h2>Налаштування</h2>
+<p>Ваш вибір щодо аналітики зберігається в локальному сховищі браузера. Ви можете очистити його зараз і повторно обрати, чи дозволяти Pixel.</p>
+<button id="reset" type="button">Змінити вибір аналітики</button>
+<h2>Зовнішні сервіси</h2>
+<p>Сторінка розміщена на GitHub Pages. Натискання «Грати» переводить у Telegram, який має власні правила конфіденційності. Якщо ви дозволяєте Pixel, діють також умови обробки даних OpenAI для рекламних конверсій.</p>
+<p>Для питань щодо гри можна звернутися через <a href="https://t.me/Shyfr_ua_bot">бот ШИФР у Telegram</a>.</p>
+<small>Редакція: 30 жовтня 2026 року.</small>
+</main><script>
+document.getElementById("reset").addEventListener("click",function(){
+try{localStorage.removeItem("shyfr_measurement_consent_v1");}catch(e){}
+location.href="./";
+});
+</script></body></html>
