@@ -37,3 +37,17 @@ Check real events in Ads Manager; check actual users/game starts/completions via
 5. Ensure current production bot stays running, no changes to current GitHub Pages root or social-sharing pages.
 
 Note: GitHub Pages is static and cannot safely store a secret CAPI key.
+
+## Meta Pixel (Facebook / Instagram)
+
+1. Meta Events Manager: https://business.facebook.com/events_manager2/ . Choose or create a Web dataset / Pixel for SHYFR and copy the numeric **Dataset ID / Pixel ID** (do not paste a CAPI access token).
+2. Put it into `play/config.js` as `metaPixelId: "YOUR_NUMERIC_PIXEL_ID"`. OpenAI `pixelId` can remain empty.
+3. Version 2 of the marketing-consent key requires all visitors to opt in again before third-party tracking runs. Without consent, neither Pixel script loads. Meta script URL: https://connect.facebook.net/en_US/fbevents.js.
+4. Upon opt-in, pixel queues `PageView`. When the visitor clicks any CTA to Telegram, it queues custom event `TelegramOpenClick` with `content_name: shyfr_telegram` and `source_tag` set to the compact bot acquisition tag.
+5. Test under Meta Events Manager > Test Events, visit the landing page with `utm_source=meta&utm_medium=cpc&utm_campaign=launch&utm_content=ad1&debug=1`, opt in and click CTA. Verify both Meta events with Meta Pixel Helper or Test Events. Ad blockers may suppress browser pixel activity.
+6. In Meta Ads Manager, conversion based on `TelegramOpenClick` optimizes for website click-outs only, NOT actual bot starts. For true player-start/completion optimization, implement server-side Meta Conversions API with an attribution bridge, click-ID retention and consent propagation, with tokens stored server-side (never in GitHub Pages).
+
+Example campaign destination:
+https://shyfr-ua.github.io/play/?utm_source=meta&utm_medium=cpc&utm_campaign=launch&utm_content=ad1
+
+The bot tracks new first visits from the above as `lp_meta_launch_ad1` in /admin_sources. This is first-touch attribution, not a statement that all users who clicked ads are new Telegram players.
