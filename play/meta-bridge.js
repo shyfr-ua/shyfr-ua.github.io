@@ -9,6 +9,18 @@
   const consentKey="shyfr_measurement_consent_v4";
   const query=new URLSearchParams(window.location.search);
   const clickid=query.get("fbclid")||"";
+  const debug=query.get("debug")==="1";
+  const debugBox=debug ? document.getElementById("debug") : null;
+  function diag(status) {
+    if(!debugBox)return;
+    let permission="unknown";
+    try { permission=localStorage.getItem(consentKey)||"not_chosen"; } catch (_) { permission="unavailable"; }
+    const pair=ids();
+    const original=debugBox.textContent.split(" | Meta bridge:")[0];
+    debugBox.textContent=original+" | Meta bridge: "+status+
+      " | consent="+permission+" | _fbc="+(pair.fbc?"yes":"no")+
+      " | _fbp="+(pair.fbp?"yes":"no")+" | fbclid="+(clickid?"present":"absent");
+  }
   function cookie(name) {
     const hit=document.cookie.split("; ").find((c)=>c.startsWith(name+"="));
     if(!hit)return "";
@@ -27,10 +39,11 @@
   let tokenPromise=null;
   async function create() {
     try {
-      if(localStorage.getItem(consentKey)!=="yes")return "";
-    } catch (_) {return "";}
+      if(localStorage.getItem(consentKey)!=="yes"){diag("consent_required");return "";}
+    } catch (_) {diag("storage_unavailable");return "";}
     const pair=ids();
-    if(!pair.fbc&&!pair.fbp)return "";
+    if(!pair.fbc&&!pair.fbp){diag("no_valid_meta_ids");return "";}
+    diag("requesting_worker");
     const controller=new AbortController();
     const timeout=setTimeout(()=>controller.abort(),3000);
     try {
@@ -40,10 +53,13 @@
         body:JSON.stringify({source:campaign.source,consent:true,...pair}),
         signal:controller.signal
       });
-      if(!response.ok)return "";
+      if(!response.ok){diag("worker_http_"+response.status);return "";}
       const body=await response.json();
-      return typeof body.token==="string" && /^[A-Za-z0-9_-]{16,32}$/.test(body.token) ? body.token : "";
-    }catch(_){return "";}finally{clearTimeout(timeout);}
+      const token=typeof body.token==="string" && /^[A-Za-z0-9_-]{16,32}$/.test(body.token) ? body.token : "";
+      diag(token?"token_created":"invalid_worker_response");
+      return token;
+    }catch(e){diag(e&&e.name==="AbortError"?"worker_timeout":"worker_network_error");return "";}
+    finally{clearTimeout(timeout);}
   }
   function resolve() {
     // A new visitor may consent before Meta finishes writing the _fbp cookie.
@@ -63,10 +79,12 @@
     e.preventDefault();
     const fallback=a.href;
     const token=await resolve();
+    diag(token?"redirect_ad_token":"redirect_fallback_source");
     window.location.assign(token ? "https://t.me/Shyfr_ua_bot?start=ad_"+encodeURIComponent(token) : fallback);
   },true));
   document.getElementById("consent-allow")?.addEventListener("click",()=>{
     Promise.resolve().then(()=>resolve());
   });
-  try {if(localStorage.getItem(consentKey)==="yes")resolve();}catch(_){}
+  diag("ready");
+  try {if(localStorage.getItem(consentKey)==="yes")resolve();}catch(_){diag("storage_unavailable");}
 })();
