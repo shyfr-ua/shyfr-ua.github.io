@@ -4,5 +4,7 @@
 // OpenAI Pixel залишено вимкненим до окремого налаштування.
 window.SHYFR_ADS_CONFIG = Object.freeze({
   metaPixelId: "5069422826617791",
+  // Fill with public Cloudflare Worker URL after bridge is deployed.
+  metaBridgeUrl: "",
   pixelId: ""
 });
