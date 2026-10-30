@@ -5,7 +5,6 @@
   const endpoint=typeof cfg.metaBridgeUrl==="string" ? cfg.metaBridgeUrl.trim().replace(/\/+$/,"") : "";
   if(!/^https:\/\/[-a-z0-9.]+(?:\/[-a-z0-9/_]*)?$/i.test(endpoint))return;
   const campaign=window.SHYFR_LANDING;
-  if(!campaign || !/^lp_meta(?:_[a-z0-9_-]+)?$/.test(campaign.source))return;
   const consentKey="shyfr_measurement_consent_v4";
   const query=new URLSearchParams(window.location.search);
   const clickid=query.get("fbclid")||"";
@@ -20,6 +19,10 @@
     debugBox.textContent=original+" | Meta bridge: "+status+
       " | consent="+permission+" | _fbc="+(pair.fbc?"yes":"no")+
       " | _fbp="+(pair.fbp?"yes":"no")+" | fbclid="+(clickid?"present":"absent");
+  }
+  if(!campaign || !/^lp_meta(?:_[a-z0-9_-]+)?$/.test(campaign.source)) {
+    diag("source_not_meta");
+    return;
   }
   function cookie(name) {
     const hit=document.cookie.split("; ").find((c)=>c.startsWith(name+"="));
