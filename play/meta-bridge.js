@@ -46,7 +46,15 @@
     }catch(_){return "";}finally{clearTimeout(timeout);}
   }
   function resolve() {
-    if(!tokenPromise)tokenPromise=create();
+    // A new visitor may consent before Meta finishes writing the _fbp cookie.
+    // Never cache a failed/empty lookup, so the next click can retry.
+    if(!tokenPromise)tokenPromise=create().then((token)=>{
+      if(!token)tokenPromise=null;
+      return token;
+    },()=>{
+      tokenPromise=null;
+      return "";
+    });
     return tokenPromise;
   }
   document.querySelectorAll(".tg-link").forEach((a)=>a.addEventListener("click",async(e)=>{
