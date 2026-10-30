@@ -3,8 +3,8 @@
 // Вставте числовий Meta Pixel ID після створення. До цього скрипт Meta не завантажується.
 // OpenAI Pixel залишено вимкненим до окремого налаштування.
 window.SHYFR_ADS_CONFIG = Object.freeze({
-  metaPixelId: "5069422826617791",
+  metaPixelId: "2025745325465805",
   // Fill with public Cloudflare Worker URL after bridge is deployed.
-  metaBridgeUrl: "",
+  metaBridgeUrl: "https://shyfr-meta-bridge.dvbilan.workers.dev",
   pixelId: ""
 });
