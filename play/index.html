@@ -159,18 +159,13 @@
     <span>© ШИФР · Українська гра в слова</span>
     <a href="./privacy.html">Конфіденційність і аналітика</a>
   </footer>
-  <aside class="consent" id="consent" aria-label="Згода на аналітику">
-    <div><h2>Допоможіть покращити ШИФР</h2><p>За вашою згодою Meta Pixel вимірює відвідування та натискання, а серверна аналітика може передавати Meta початок і завершення першої гри. Для зіставлення використовуються рекламні ідентифікатори та технічні дані браузера (IP-адреса й User-Agent). Можна грати без аналітики. <a href="./privacy.html">Докладніше</a>.</p></div>
-    <div class="consent-buttons"><button class="allow" id="consent-allow" type="button">Дозволити</button><button class="deny" id="consent-deny" type="button">Без аналітики</button></div>
-  </aside>
-  <div class="debug wrap" id="debug"></div>
+<div class="debug wrap" id="debug"></div>
   <script>
   (function() {
     "use strict";
     var BOT = "Shyfr_ua_bot";
     var CONFIG = window.SHYFR_ADS_CONFIG || {};
     var STORAGE_KEY = "shyfr_landing_attribution_v1";
-    var CONSENT_KEY = "shyfr_measurement_consent_v4"; // Fresh opt-in for adding Meta Pixel
     var MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
     var qs = new URLSearchParams(window.location.search);
     function safeStoreGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
@@ -209,41 +204,6 @@
     }
     var openaiPixelOn = false;
     var metaPixelOn = false;
-    function loadOpenAIPixel() {
-      if(openaiPixelOn || !openaiPixelConfigured()) return;
-      openaiPixelOn = true;
-      (function(w,d,s,u) {
-        if(w.oaiq) return;
-        var q=function(){ q.q.push(arguments); };
-        q.q=[]; w.oaiq=q;
-        var js=d.createElement(s); js.async=true; js.src=u;
-        var f=d.getElementsByTagName(s)[0]; f.parentNode.insertBefore(js,f);
-      })(window,document,"script","https://bzrcdn.openai.com/sdk/oaiq.min.js");
-      window.oaiq("consent",true);
-      window.oaiq("init",{pixelId: CONFIG.pixelId.trim()});
-      window.oaiq("measure","page_viewed",{type:"contents",contents:[{id:"shyfr_landing",name:"ШИФР лендінг",content_type:"page"}]});
-    }
-    function loadMetaPixel() {
-      if(metaPixelOn || !metaPixelConfigured()) return;
-      metaPixelOn = true;
-      // Official Meta Pixel browser queue, initialized only after opt-in.
-      !function(f,b,e,v,n,t,s) {
-        if(f.fbq) return;
-        n=f.fbq=function() { n.callMethod ? n.callMethod.apply(n,arguments) : n.queue.push(arguments); };
-        if(!f._fbq) f._fbq=n;
-        n.push=n; n.loaded=!0; n.version="2.0"; n.queue=[];
-        t=b.createElement(e); t.async=!0; t.src=v;
-        s=b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t,s);
-      }(window,document,"script","https://connect.facebook.net/en_US/fbevents.js");
-      // We send only explicitly defined events; avoid extra automated events.
-      window.fbq("set","autoConfig",false,CONFIG.metaPixelId.trim());
-      window.fbq("init",CONFIG.metaPixelId.trim());
-      window.fbq("track","PageView");
-    }
-    function loadPixels() {
-      loadMetaPixel();
-      loadOpenAIPixel();
-    }
     document.querySelectorAll(".tg-link").forEach(function(el) {
       el.addEventListener("click",function() {
         if(metaPixelOn && typeof window.fbq==="function") {
@@ -259,19 +219,6 @@
         try { sessionStorage.setItem("shyfr_last_telegram_click",JSON.stringify({source:sourceCode,at:Date.now()})); } catch (_) {}
       });
     });
-    var consent = safeStoreGet(CONSENT_KEY);
-    var banner = document.getElementById("consent");
-    if(consent==="yes") loadPixels();
-    else if(consent!=="no") banner.classList.add("visible");
-    function choose(choice) {
-      consent=choice;
-      safeStoreSet(CONSENT_KEY,choice);
-      banner.classList.remove("visible");
-      if(choice==="yes") loadPixels();
-      updateDebug();
-    }
-    document.getElementById("consent-allow").addEventListener("click",function(){choose("yes");});
-    document.getElementById("consent-deny").addEventListener("click",function(){choose("no");});
     var debug=document.getElementById("debug");
     function updateDebug() {
       if(qs.get("debug")!=="1") return;
@@ -279,12 +226,12 @@
       debug.textContent="UTM: "+JSON.stringify(attribution)+" | Telegram: "+tgHref+
         " | Meta configured: "+metaPixelConfigured()+" / active: "+metaPixelOn+
         " | OpenAI configured: "+openaiPixelConfigured()+" / active: "+openaiPixelOn+
-        " | Consent: "+(consent||"not set");
+        " | Tracking: server_only_no_cookie";
     }
     updateDebug();
     window.SHYFR_LANDING = Object.freeze({source:sourceCode,payload:payload,url:tgHref});
   })();
   </script>
-  <script src="./meta-bridge.js?v=context-fallback-51082" defer></script>
+  <script src="./meta-bridge-v86.js?v=20261031" defer></script>
 </body>
 </html>
