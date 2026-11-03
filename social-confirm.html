@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-18">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-22">
   <title>Поділитися результатом ШИФР</title>
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
@@ -26,7 +26,7 @@
     <button id="instagram" type="button">Instagram</button>
     <button id="other" class="secondary" type="button">Інші соцмережі</button>
   </div>
-  <p class="note">Після вибору відкриється зовнішній браузер із системним меню поширення.</p>
+  <p class="note">Threads відкриється з готовим текстовим постом. Для Instagram та інших соцмереж залишається звичайне поширення.</p>
   <div id="error" class="error"></div>
 </main>
 <script>
@@ -43,6 +43,47 @@
   function kyivToday(){
     var parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Kyiv',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
     var values={};parts.forEach(function(part){if(part.type!=='literal')values[part.type]=part.value});return values.year+'-'+values.month+'-'+values.day
+  }
+  function decodeBase64Url(value){
+    if(!value)return '';
+    try{
+      var padded=value.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-value.length%4)%4);
+      var bytes=Uint8Array.from(atob(padded),function(c){return c.charCodeAt(0)});
+      return new TextDecoder('utf-8',{fatal:false}).decode(bytes)
+    }catch(e){return ''}
+  }
+  function threadsText(source){
+    // Retain the actual board, score and earned badge from the bot.
+    var prepared=source.replace(/^Telegram:\s*@Shyfr_ua_bot\s*$/gim,
+      'Зламай сьогоднішній ШИФР через @shyfr_ua 🔐').trim();
+    if(!prepared.includes('@shyfr_ua')){
+      prepared+='\n\nЗламай сьогоднішній ШИФР через @shyfr_ua 🔐';
+    }
+    return prepared;
+  }
+  function validSession(){
+    if(!ticket||!text||!gameDate||gameDate!==kyivToday()){
+      showError('Не вдалося відкрити актуальний результат. Поверніться в бот і спробуйте ще раз.');
+      return false;
+    }
+    return true;
+  }
+  function openThreads(){
+    errorBox.style.display='none';
+    if(!validSession())return;
+    var post=threadsText(decodeBase64Url(text));
+    if(!post){showError('Не вдалося прочитати текст результату.');return}
+    // Official Threads composer, not the PNG-generating social-share.html.
+    var url='https://www.threads.com/intent/post?text='+encodeURIComponent(post);
+    try{
+      if(tg&&typeof tg.openLink==='function'){
+        tg.openLink(url,{try_instant_view:false,try_browser:'chrome'});
+      }else{
+        window.location.href=url;
+      }
+    }catch(e){
+      window.location.href=url;
+    }
   }
   function externalUrl(platform){
     var u=new URL('/social-share.html',location.origin);
@@ -72,7 +113,7 @@
   }
 
   try{if(tg&&typeof tg.ready==='function')tg.ready();if(tg&&typeof tg.expand==='function')tg.expand()}catch(e){}
-  document.getElementById('threads').addEventListener('click',function(){openExternal('threads')});
+  document.getElementById('threads').addEventListener('click',openThreads);
   document.getElementById('instagram').addEventListener('click',function(){openExternal('instagram')});
   document.getElementById('other').addEventListener('click',function(){openExternal('other')});
 })();
