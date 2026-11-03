@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-22">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-23">
   <title>Поділитися результатом ШИФР</title>
   <style>
     :root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
@@ -122,16 +122,19 @@
     if(platform==='threads'){
       // Direct Threads composer instead of navigator.share with a PNG.
       var post=threadsText(text);
-      var web='https://www.threads.com/intent/post?text='+encodeURIComponent(post);
+      // Keep failure on our page rather than sending logged-out users to threads.com/login.
+      var noAppFallback=new URL(window.location.href);
+      noAppFallback.searchParams.set('noapp','1');
       var androidIntent='intent://create?text='+encodeURIComponent(post)+
         '#Intent;scheme=barcelona;package=com.instagram.barcelona;'+
-        'S.browser_fallback_url='+encodeURIComponent(web)+';end';
+        'S.browser_fallback_url='+encodeURIComponent(noAppFallback.toString())+';end';
+      var iosNative='barcelona://create?text='+encodeURIComponent(post);
       // Optional return path preserves the existing one-time ticket flow.
       // The user must actually publish before using it; publication cannot be observed here.
       returnBox.style.display='block';
       note.textContent='Після публікації поверніться сюди, щоб завершити поширення в ШИФРІ.';
       returnLink.href=tgReturn;
-      window.location.href=/Android/i.test(navigator.userAgent||'')?androidIntent:web;
+      window.location.href=/Android/i.test(navigator.userAgent||'')?androidIntent:iosNative;
       return;
     }
     if(typeof navigator.share!=='function'){
@@ -172,7 +175,8 @@
     buildImage(text,true).then(function(file){preparedFile=file;shareButton.disabled=false}).catch(function(){preparedError=true;shareButton.disabled=false});
   }else if(platform==='threads'){
     title.textContent='🧵 Threads';
-    lead.textContent='Відкриємо Threads одразу з готовим текстовим постом. Жодної картинки.';
+    lead.textContent='Натисніть кнопку, щоб відкрити застосунок Threads із готовим текстом та сіткою. Картинка не використовується.';
+    if(q.get('noapp')==='1')showError('Android не зміг відкрити Threads. Перевірте, чи встановлений застосунок Threads.');
     shareButton.textContent='Відкрити Threads із готовим постом';
     shareButton.disabled=false;
   }else{
