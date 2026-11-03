@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
   <title>Поділитися результатом ШИФР</title>
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-15">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-16">
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
     :root {
@@ -98,13 +98,13 @@
   <section id="mobile">
     <div id="mobileTelegram">
       <h1>📱 Опублікувати результат</h1>
-      <p class="lead">Натисніть кнопку нижче</p>
+      <p id="mobileLead" class="lead">Натисніть кнопку нижче</p>
 
       <div class="share-list">
         <button id="systemShare" class="share primary" type="button">📱 Опублікувати результат</button>
       </div>
 
-      <p class="note">Відкриємо сторінку поширення у браузері.</p>
+      <p class="note">Для Threads відкриємо готовий пост одразу. Для інших соцмереж відкриємо сторінку поширення у браузері.</p>
     </div>
 
     <div id="mobileExternal" style="display:none">
@@ -403,6 +403,28 @@
     }, 150);
   }
 
+  const parsed = parseResult(text);
+  // Keep the full game result as selectable text, not an image.
+  // The CTA mentions the official Threads account instead of a Telegram-only label.
+  const threadsPostText = [
+    ...(parsed.grid.length
+      ? [parsed.header, ...parsed.grid.map(row => row.join(''))]
+      : [text.trim()]),
+    '',
+    'Зламай сьогоднішній ШИФР через @shyfr_ua 🔐'
+  ].join('\n');
+
+  const threadsWebFallback =
+    'https://www.threads.com/intent/post?text=' + encodeURIComponent(threadsPostText);
+
+  const threadsNativeUrl =
+    'barcelona://create?text=' + encodeURIComponent(threadsPostText);
+
+  const threadsIntent =
+    'intent://create?text=' + encodeURIComponent(threadsPostText) +
+    '#Intent;scheme=barcelona;package=com.instagram.barcelona;' +
+    'S.browser_fallback_url=' + encodeURIComponent(threadsWebFallback) + ';end';
+
   if (isExternalMobile) {
     telegramBlock.style.display = 'none';
     externalBlock.style.display = 'block';
@@ -423,28 +445,6 @@
       externalBlock.querySelector('.lead').textContent = 'Опублікуйте картинку в Instagram';
     }
 
-    const parsed = parseResult(text);
-    // Keep the full game result as selectable text, not an image.
-    // The CTA mentions the official Threads account instead of a Telegram-only label.
-    const threadsPostText = [
-      ...(parsed.grid.length
-        ? [parsed.header, ...parsed.grid.map(row => row.join(''))]
-        : [text.trim()]),
-      '',
-      'Зламай сьогоднішній ШИФР через @shyfr_ua 🔐'
-    ].join('\n');
-
-    const threadsWebFallback =
-      'https://www.threads.com/intent/post?text=' + encodeURIComponent(threadsPostText);
-
-    const threadsNativeUrl =
-      'barcelona://create?text=' + encodeURIComponent(threadsPostText);
-
-    const threadsIntent =
-      'intent://create?text=' + encodeURIComponent(threadsPostText) +
-      '#Intent;scheme=barcelona;package=com.instagram.barcelona;' +
-      'S.browser_fallback_url=' + encodeURIComponent(threadsWebFallback) + ';end';
-
     let instagramFile = null;
     let instagramBuildError = false;
 
@@ -459,27 +459,12 @@
       instagramShare.disabled = false;
     });
 
-    threadsShare.addEventListener('click', async () => {
+    threadsShare.addEventListener('click', () => {
       errorBox.style.display = 'none';
 
-      // Text-only system share keeps the existing return-and-credit flow.
-      if (typeof navigator.share === 'function') {
-        try {
-          await navigator.share({ text: threadsPostText });
-          returnToBotAfterSocialShare();
-          return;
-        } catch (err) {
-          if (err && err.name === 'AbortError') return;
-        }
-      }
-
-      // Fallback to the original Threads composer with the FULL result,
-      // not only its header. A deep link cannot confirm publication.
-      try {
-        window.location.href = /Android/i.test(ua) ? threadsIntent : threadsNativeUrl;
-      } catch (_) {
-        window.location.href = threadsWebFallback;
-      }
+      // Open the Threads composer directly with the full emoji result.
+      // No system share sheet, image, or intermediate app selection.
+      window.location.href = /Android/i.test(ua) ? threadsIntent : threadsWebFallback;
     });
 
     instagramShare.addEventListener('click', async () => {
@@ -532,14 +517,32 @@
 
   const shareButton = document.getElementById('systemShare');
 
+  if (requestedPlatform === 'threads') {
+    shareButton.textContent = 'Відкрити Threads із готовим постом';
+    document.getElementById('mobileLead').textContent = 'Відкриємо Threads із готовим текстом. Залишиться натиснути «Опублікувати».';
+  }
+
   shareButton.addEventListener('click', () => {
     errorBox.style.display = 'none';
 
     try {
       const tg = window.Telegram && window.Telegram.WebApp;
+      if (requestedPlatform === 'threads') {
+        // HTTPS web intent can open the Threads app from Telegram.
+        // Opening it from a click avoids blocked automatic app launches.
+        if (tg && typeof tg.openLink === 'function') {
+          tg.openLink(threadsWebFallback, { try_instant_view: false, try_browser: 'chrome' });
+        } else {
+          window.location.href = threadsWebFallback;
+        }
+        return;
+      }
+
       if (tg && typeof tg.openLink === 'function') {
         const externalUrl = new URL(window.location.href);
         externalUrl.searchParams.set('external', '1');
+        // Fresh URL to avoid cached versions in an external browser.
+        externalUrl.searchParams.set('share_v', '16');
 
         tg.openLink(externalUrl.toString(), {
           try_instant_view: false,
