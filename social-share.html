@@ -112,9 +112,9 @@
   }
 
   function threadsText(source){
-    var prepared=source.replace(/^Telegram:\\s*@Shyfr_ua_bot\\s*$/gim,
+    var prepared=source.replace(/^Telegram:\s*@Shyfr_ua_bot\s*$/gim,
       'Зламай сьогоднішній ШИФР через @shyfr_ua 🔐').trim();
-    if(!prepared.includes('@shyfr_ua'))prepared+='\\n\\nЗламай сьогоднішній ШИФР через @shyfr_ua 🔐';
+    if(!prepared.includes('@shyfr_ua'))prepared+='\n\nЗламай сьогоднішній ШИФР через @shyfr_ua 🔐';
     return prepared;
   }
   async function sharePrepared(){
