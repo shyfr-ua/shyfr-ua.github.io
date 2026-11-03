@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111111">
-  <meta name="shyfr-share-build" content="shyfr-ua-pages-22">
+  <meta name="shyfr-share-build" content="shyfr-ua-pages-23">
   <title>Поділитися результатом ШИФР</title>
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
   <style>
@@ -26,7 +26,7 @@
     <button id="instagram" type="button">Instagram</button>
     <button id="other" class="secondary" type="button">Інші соцмережі</button>
   </div>
-  <p class="note">Threads відкриється з готовим текстовим постом. Для Instagram та інших соцмереж залишається звичайне поширення.</p>
+  <p class="note">Threads: відкриємо Chrome, де кнопка запустить застосунок із готовим текстом. Instagram залишиться з картинкою.</p>
   <div id="error" class="error"></div>
 </main>
 <script>
@@ -68,26 +68,9 @@
     }
     return true;
   }
-  function openThreads(){
-    errorBox.style.display='none';
-    if(!validSession())return;
-    var post=threadsText(decodeBase64Url(text));
-    if(!post){showError('Не вдалося прочитати текст результату.');return}
-    // Official Threads composer, not the PNG-generating social-share.html.
-    var url='https://www.threads.com/intent/post?text='+encodeURIComponent(post);
-    try{
-      if(tg&&typeof tg.openLink==='function'){
-        tg.openLink(url,{try_instant_view:false,try_browser:'chrome'});
-      }else{
-        window.location.href=url;
-      }
-    }catch(e){
-      window.location.href=url;
-    }
-  }
   function externalUrl(platform){
     var u=new URL('/social-share.html',location.origin);
-    u.searchParams.set('v','51062fix1');
+    u.searchParams.set('v','51062fix3');
     u.searchParams.set('t',text);
     u.searchParams.set('gd',gameDate);
     u.searchParams.set('ticket',ticket);
@@ -106,14 +89,14 @@
       return;
     }
     try{
-      tg.openLink(externalUrl(platform),{try_instant_view:false});
+      tg.openLink(externalUrl(platform),{try_instant_view:false,try_browser:'chrome'});
     }catch(e){
       showError('Не вдалося відкрити зовнішній браузер. Спробуйте ще раз.');
     }
   }
 
   try{if(tg&&typeof tg.ready==='function')tg.ready();if(tg&&typeof tg.expand==='function')tg.expand()}catch(e){}
-  document.getElementById('threads').addEventListener('click',openThreads);
+  document.getElementById('threads').addEventListener('click',function(){openExternal('threads')});
   document.getElementById('instagram').addEventListener('click',function(){openExternal('instagram')});
   document.getElementById('other').addEventListener('click',function(){openExternal('other')});
 })();
